@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: core-service
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  liquibase:
+    change-log: db/changelog-master.yml
+    enabled: true
+
+server:
+  port: ${SERVER_PORT:8081}

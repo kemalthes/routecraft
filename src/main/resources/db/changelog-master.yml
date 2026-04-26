@@ -1,0 +1,6 @@
+databaseChangeLog:
+  - include:
+      file: changelog/20260426-init.sql
+  - include:
+      file: changelog/20260426-seed-roles.sql
+
