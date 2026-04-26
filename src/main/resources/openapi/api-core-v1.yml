@@ -1,0 +1,810 @@
+openapi: 3.0.3
+info:
+  title: RouteCraft Core API
+  description: Полная спецификация Core Service (Маршруты, Пользователи, Избранное, Файлы)
+  version: 1.0.0
+
+servers:
+  - url: /api
+    description: Core Service
+
+tags:
+  - name: auth
+    description: Аутентификация и управление сессиями
+  - name: users
+    description: Профиль пользователя
+  - name: routes
+    description: Основной CRUD маршрутов
+  - name: favorites
+    description: Сохраненные маршруты
+  - name: reviews
+    description: Отзывы и рейтинги
+  - name: files
+    description: Загрузка файлов (MinIO)
+  - name: admin
+    description: Панель администратора
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - auth
+      summary: Регистрация нового пользователя
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Успешная регистрация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /auth/login:
+    post:
+      tags:
+        - auth
+      summary: Вход в систему
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Успешный вход
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/refresh:
+    post:
+      tags:
+        - auth
+      summary: Обновление токенов
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Новая пара токенов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/logout:
+    post:
+      tags:
+        - auth
+      summary: Выход из системы
+      operationId: logout
+      responses:
+        '204':
+          description: Успешный выход
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/me:
+    get:
+      tags:
+        - users
+      summary: Получить данные текущего профиля
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: Данные пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /routes:
+    get:
+      tags:
+        - routes
+      summary: Получить список маршрутов с фильтрацией и пагинацией
+      operationId: getRoutes
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы (начиная с 1)
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          description: Количество элементов на странице
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+        - name: filter
+          in: query
+          description: ID категории или фильтра
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список маршрутов с метаданными пагинации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRoutesResponse'
+
+    post:
+      tags:
+        - routes
+      summary: Создать новый маршрут
+      operationId: createRoute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRouteRequest'
+      responses:
+        '201':
+          description: ID созданного маршрута
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int64
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /routes/popular:
+    get:
+      tags:
+        - routes
+      summary: Популярные маршруты (чаще добавляют в избранное)
+      operationId: getPopularRoutes
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Список популярных маршрутов с пагинацией
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRoutesResponse'
+
+  /routes/{id}:
+    get:
+      tags:
+        - routes
+      summary: Получить полную информацию о маршруте
+      operationId: getRouteById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Детали маршрута
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteFullResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - routes
+      summary: Удалить маршрут (только автор или админ)
+      operationId: deleteRoute
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Маршрут удален
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /favorites:
+    get:
+      tags:
+        - favorites
+      summary: Получить избранные маршруты пользователя с пагинацией
+      operationId: getFavorites
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы (начиная с 1)
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          description: Количество элементов на странице
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Список избранного с метаданными пагинации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRoutesResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /favorites/{routeId}:
+    post:
+      tags:
+        - favorites
+      summary: Добавить маршрут в избранное
+      operationId: addFavorite
+      parameters:
+        - name: routeId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Добавлено
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+    delete:
+      tags:
+        - favorites
+      summary: Удалить из избранного
+      operationId: removeFavorite
+      parameters:
+        - name: routeId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Удалено
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /routes/{routeId}/reviews:
+    get:
+      tags:
+        - reviews
+      summary: Получить список отзывов к маршруту с пагинацией
+      operationId: getReviewsByRoute
+      parameters:
+        - name: routeId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: page
+          in: query
+          description: Номер страницы (начиная с 1)
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          description: Количество отзывов на странице
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Список отзывов с метаданными пагинации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedReviewsResponse'
+    post:
+      tags:
+        - reviews
+      summary: Добавить отзыв к маршруту
+      operationId: createReview
+      parameters:
+        - name: routeId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+      responses:
+        '201':
+          description: Отзыв добавлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /files/upload:
+    post:
+      tags:
+        - files
+      summary: Загрузить изображение
+      operationId: uploadFile
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Файл успешно загружен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUrlResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /files/preview/{fileName}:
+    get:
+      tags:
+        - files
+      summary: Получить изображение
+      operationId: getFilePreview
+      parameters:
+        - name: fileName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Бинарные данные изображения
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /admin/users:
+    get:
+      tags:
+        - admin
+      summary: Список всех пользователей
+      operationId: getAllUsersAdmin
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /admin/users/{userId}:
+    delete:
+      tags:
+        - admin
+      summary: Удалить пользователя
+      operationId: deleteUserAdmin
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Пользователь удален
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+components:
+  responses:
+    BadRequestError:
+      description: Неверный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ValidationError:
+      description: Ошибка валидации полей формы
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorResponse'
+    UnauthorizedError:
+      description: Необходима авторизация (Токен отсутствует или истек)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ForbiddenError:
+      description: Недостаточно прав (Нужна роль ADMIN или авторство)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFoundError:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ConflictError:
+      description: Конфликт (например, email уже занят, или уже в избранном)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    PaginationMeta:
+      type: object
+      properties:
+        totalItems:
+          type: integer
+          description: Всего элементов в базе
+          example: 154
+        totalPages:
+          type: integer
+          description: Общее количество страниц
+          example: 8
+        currentPage:
+          type: integer
+          description: Текущая страница
+          example: 1
+        itemsPerPage:
+          type: integer
+          description: Количество элементов на странице
+          example: 20
+
+    PaginatedRoutesResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoutePreviewResponse'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    PaginatedReviewsResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewResponse'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 404
+        error:
+          type: string
+          example: "Not Found"
+        message:
+          type: string
+          example: "Ресурс не найден"
+        path:
+          type: string
+          example: "/api/routes/12"
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: "Bad Request"
+        message:
+          type: string
+          example: "Ошибка валидации входных данных"
+        path:
+          type: string
+        validationErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldErrorDto'
+
+    FieldErrorDto:
+      type: object
+      properties:
+        field:
+          type: string
+          example: "title"
+        message:
+          type: string
+          example: "Название должно содержать минимум 5 символов"
+
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: "^[a-zA-Z0-9_]+$"
+        email:
+          type: string
+          format: email
+          maxLength: 100
+        password:
+          type: string
+          minLength: 8
+          maxLength: 64
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        role:
+          type: string
+          enum:
+            - ROLE_USER
+            - ROLE_ADMIN
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    LocationDto:
+      type: object
+      required:
+        - latitude
+        - longitude
+        - orderIndex
+      properties:
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+        orderIndex:
+          type: integer
+          minimum: 0
+
+    CreateRouteRequest:
+      type: object
+      required:
+        - title
+        - locations
+      properties:
+        title:
+          type: string
+          minLength: 5
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 2000
+        imageUrl:
+          type: string
+          format: uri
+        locations:
+          type: array
+          minItems: 2
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/LocationDto'
+
+    RoutePreviewResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        imageUrl:
+          type: string
+        distance:
+          type: number
+          format: double
+          minimum: 0
+        durationMinutes:
+          type: integer
+          minimum: 0
+        authorName:
+          type: string
+
+    RouteFullResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+        distance:
+          type: number
+          format: double
+        durationMinutes:
+          type: integer
+        authorName:
+          type: string
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationDto'
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewResponse'
+
+    ReviewRequest:
+      type: object
+      required:
+        - rating
+        - comment
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          minLength: 2
+          maxLength: 1000
+
+    ReviewResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        authorName:
+          type: string
+        rating:
+          type: integer
+        comment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    FileUrlResponse:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
