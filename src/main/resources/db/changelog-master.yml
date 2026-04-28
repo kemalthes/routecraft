@@ -1,6 +1,7 @@
 databaseChangeLog:
   - include:
-      file: changelog/20260426-init.sql
+      file: db/changelog/20260426-init.sql
   - include:
-      file: changelog/20260426-seed-roles.sql
-
+      file: db/changelog/20260426-seed-roles.sql
+  - include:
+      file: db/changelog/20260428-alter-tables.sql

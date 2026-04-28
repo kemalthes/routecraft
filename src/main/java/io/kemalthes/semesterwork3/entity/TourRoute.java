@@ -1,6 +1,7 @@
 package io.kemalthes.semesterwork3.entity;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -9,6 +10,10 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import lombok.Builder;
+import org.hibernate.annotations.JdbcTypeCode;
+
+import java.sql.Types;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -27,23 +32,34 @@ import lombok.Setter;
 @AllArgsConstructor
 @Entity
 @Table(name = "tour_routes")
+@Builder
 public class TourRoute {
 
     @Id
+    @Column(name = "id", nullable = false)
     private UUID id;
 
+    @Column(name = "title", length = 255, nullable = false)
     private String title;
 
+    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
-    private BigDecimal basePrice;
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private String imageUrl;
 
+    @Column(name = "distance", precision = 12, scale = 3)
     private BigDecimal distance;
 
+    @Column(name = "duration_minutes")
     private Integer durationMinutes;
 
+    @JdbcTypeCode(Types.LONGVARCHAR)
+    @Column(name = "geometry", columnDefinition = "TEXT")
+    private String geometry;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "author_id")
+    @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
     @OrderBy("orderIndex ASC")
@@ -56,4 +72,3 @@ public class TourRoute {
     @OneToMany(mappedBy = "route", cascade = CascadeType.REMOVE)
     private Set<Review> reviews = new HashSet<>();
 }
-

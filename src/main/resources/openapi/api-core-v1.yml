@@ -130,7 +130,7 @@ paths:
     get:
       tags:
         - routes
-      summary: Получить список маршрутов с фильтрацией и пагинацией
+      summary: Получить список маршрутов с поиском и пагинацией
       operationId: getRoutes
       parameters:
         - name: page
@@ -148,11 +148,11 @@ paths:
             default: 10
             minimum: 1
             maximum: 100
-        - name: filter
+        - name: search
           in: query
-          description: ID категории или фильтра
+          description: Поисковая строка по названию или описанию маршрута
           schema:
-            type: integer
+            type: string
       responses:
         '200':
           description: Список маршрутов с метаданными пагинации
@@ -178,40 +178,38 @@ paths:
           content:
             application/json:
               schema:
-                type: integer
-                format: int64
+                type: string
+                format: uuid
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-  /routes/popular:
-    get:
+    put:
       tags:
         - routes
-      summary: Популярные маршруты (чаще добавляют в избранное)
-      operationId: getPopularRoutes
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 1
-            minimum: 1
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 10
-            minimum: 1
-            maximum: 100
+      summary: Обновить метаинформацию маршрута
+      operationId: updateRouteById
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRouteRequest'
       responses:
         '200':
-          description: Список популярных маршрутов с пагинацией
+          description: ID обновленного маршрута
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedRoutesResponse'
+                type: string
+                format: uuid
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
 
   /routes/{id}:
     get:
@@ -224,8 +222,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
+            format: uuid
       responses:
         '200':
           description: Детали маршрута
@@ -246,8 +244,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
+            format: uuid
       responses:
         '204':
           description: Маршрут удален
@@ -301,8 +299,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
+            format: uuid
       responses:
         '204':
           description: Добавлено
@@ -323,8 +321,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
+            format: uuid
       responses:
         '204':
           description: Удалено
@@ -342,8 +340,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
+            format: uuid
         - name: page
           in: query
           description: Номер страницы (начиная с 1)
@@ -376,8 +374,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -723,12 +721,28 @@ components:
           items:
             $ref: '#/components/schemas/LocationDto'
 
+    UpdateRouteRequest:
+      type: object
+      required:
+        - title
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 5
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 2000
+
     RoutePreviewResponse:
       type: object
       properties:
         id:
-          type: integer
-          format: int64
+          type: string
+          format: uuid
         title:
           type: string
         imageUrl:
@@ -747,8 +761,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
-          format: int64
+          type: string
+          format: uuid
         title:
           type: string
         description:
@@ -770,6 +784,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ReviewResponse'
+        geometry:
+          type: string
 
     ReviewRequest:
       type: object
