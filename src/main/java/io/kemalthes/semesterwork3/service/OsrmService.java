@@ -34,7 +34,7 @@ public class OsrmService {
                 .sorted(Comparator.comparing(LocationDto::getOrderIndex))
                 .toList();
         String coordinates = sorted.stream()
-                .map(location -> location.getLongitude() + "," + location.getLatitude())
+                .map(location -> "%s,%s".formatted(location.getLongitude(), location.getLatitude()))
                 .collect(Collectors.joining(";"));
         String requestUrl = "%s/route/v1/driving/%s?overview=full".formatted(osrmBaseUrl, coordinates);
         ResponseEntity<OsrmResponse> response;

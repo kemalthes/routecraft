@@ -30,6 +30,7 @@ sourceSets {
 val openapiVersion = "2.6.0"
 val jacksonNullableVersion = "0.2.6"
 val mapstructVersion = "1.5.5.Final"
+val minioVersion = "9.0.0"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-amqp")
@@ -43,6 +44,7 @@ dependencies {
     implementation("org.mapstruct:mapstruct:$mapstructVersion")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$openapiVersion")
     implementation("org.openapitools:jackson-databind-nullable:${jacksonNullableVersion}")
+    implementation("io.minio:minio:${minioVersion}")
     compileOnly("org.projectlombok:lombok")
     runtimeOnly("org.postgresql:postgresql")
     annotationProcessor("org.projectlombok:lombok")

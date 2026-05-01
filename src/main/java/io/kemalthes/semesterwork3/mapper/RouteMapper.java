@@ -9,7 +9,6 @@ import org.mapstruct.Named;
 import org.mapstruct.ReportingPolicy;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Mapper(
         componentModel = "spring",
@@ -17,20 +16,18 @@ import java.util.List;
 )
 public interface RouteMapper {
 
-    @Mapping(target = "distance", source = "distance", qualifiedByName = "routeBigDecimalToDouble")
-    @Mapping(target = "authorName", source = "author.username")
-    RoutePreviewResponse toRoutePreviewResponse(TourRoute route);
+    @Mapping(target = "imageUrl", source = "presignedUrl")
+    @Mapping(target = "distance", source = "route.distance", qualifiedByName = "routeBigDecimalToDouble")
+    @Mapping(target = "authorName", source = "route.author.username")
+    RoutePreviewResponse toRoutePreviewResponse(TourRoute route, String presignedUrl);
 
-    List<RoutePreviewResponse> toRoutePreviewResponseList(List<TourRoute> routes);
-
-    @Mapping(target = "distance", source = "distance", qualifiedByName = "routeBigDecimalToDouble")
-    @Mapping(target = "authorName", source = "author.username")
-    @Mapping(target = "reviews", ignore = true)
-    RouteFullResponse toRouteFullResponse(TourRoute route);
+    @Mapping(target = "imageUrl", source = "presignedUrl")
+    @Mapping(target = "distance", source = "route.distance", qualifiedByName = "routeBigDecimalToDouble")
+    @Mapping(target = "authorName", source = "route.author.username")
+    RouteFullResponse toRouteFullResponse(TourRoute route, String presignedUrl);
 
     @Named("routeBigDecimalToDouble")
     default Double routeBigDecimalToDouble(BigDecimal value) {
         return value == null ? null : value.doubleValue();
     }
-
 }

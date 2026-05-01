@@ -1,6 +1,7 @@
 package io.kemalthes.semesterwork3.service;
 
 import io.kemalthes.core.dto.CreateRouteRequest;
+import io.kemalthes.core.dto.CreateRouteResponse;
 import io.kemalthes.core.dto.LocationDto;
 import io.kemalthes.core.dto.PaginatedRoutesResponse;
 import io.kemalthes.core.dto.PaginationMeta;
@@ -9,6 +10,7 @@ import io.kemalthes.core.dto.UpdateRouteRequest;
 import io.kemalthes.semesterwork3.dto.OsrmRouteMetrics;
 import io.kemalthes.semesterwork3.entity.TourRoute;
 import io.kemalthes.semesterwork3.entity.User;
+import io.kemalthes.semesterwork3.entity.enums.RouteStatus;
 import io.kemalthes.semesterwork3.exception.BadRequestException;
 import io.kemalthes.semesterwork3.exception.RouteAccessDeniedException;
 import io.kemalthes.semesterwork3.exception.RouteNotFoundException;
@@ -40,19 +42,22 @@ public class RouteService {
     private final RouteMapper routeMapper;
     private final LocationMapper locationMapper;
     private final CurrentUserService currentUserService;
+    private final MinioService minioService;
 
     @Transactional
-    public UUID createRoute(CreateRouteRequest request) {
+    public CreateRouteResponse createRoute(CreateRouteRequest request) {
         validateLocations(request.getLocations());
         UUID authorId = currentUserService.getCurrentUserId();
         User author = resolveAuthor(authorId);
         OsrmRouteMetrics metrics = osrmService.calculateRoute(request.getLocations());
+        String objectKey = minioService.generateObjectName(request.getImageUrl());
         TourRoute route = TourRoute.builder()
                 .id(UUID.randomUUID())
                 .title(request.getTitle())
                 .description(request.getDescription() == null ? "" : request.getDescription())
-                .imageUrl(request.getImageUrl())
+                .imageUrl(objectKey)
                 .distance(BigDecimal.valueOf(metrics.distanceKm()))
+                .status(RouteStatus.DRAFT)
                 .durationMinutes(metrics.durationMinutes())
                 .geometry(metrics.geometry())
                 .author(author)
@@ -65,7 +70,8 @@ public class RouteService {
                     route.getLocations().add(location);
                 });
         TourRoute savedRoute = tourRouteRepository.save(route);
-        return savedRoute.getId();
+        String presignedUrl = minioService.putPresignedUrl(objectKey);
+        return new CreateRouteResponse(savedRoute.getId(), presignedUrl);
     }
 
     @Transactional(readOnly = true)
@@ -87,18 +93,24 @@ public class RouteService {
                 .currentPage(currentPage)
                 .itemsPerPage(itemsPerPage);
         return new PaginatedRoutesResponse()
-                .items(routeMapper.toRoutePreviewResponseList(pageResult.getContent()))
+                .items(pageResult.getContent().stream()
+                        .map(route -> {
+                            String presignedUrl = minioService.getPresignedUrl(route.getImageUrl());
+                            return routeMapper.toRoutePreviewResponse(route, presignedUrl);
+                        })
+                        .toList())
                 .meta(meta);
     }
 
     @Transactional(readOnly = true)
     public RouteFullResponse getRouteById(UUID id) {
         TourRoute route = findByRouteId(id);
-        return routeMapper.toRouteFullResponse(route);
+        String presignedUrl = minioService.getPresignedUrl(route.getImageUrl());
+        return routeMapper.toRouteFullResponse(route, presignedUrl);
     }
 
     @Transactional
-    public UUID updateRouteMeta(UpdateRouteRequest request) {
+    public UUID confirmRoute(UpdateRouteRequest request) {
         if (request.getUuid() == null) {
             throw new BadRequestException("Route id is required");
         }
@@ -106,6 +118,7 @@ public class RouteService {
         validateRouteAccess(route);
         route.setTitle(request.getTitle());
         route.setDescription(request.getDescription() == null ? "" : request.getDescription());
+        route.setStatus(RouteStatus.PUBLISHED);
         TourRoute updatedRoute = tourRouteRepository.save(route);
         return updatedRoute.getId();
     }
@@ -115,6 +128,13 @@ public class RouteService {
         TourRoute route = findByRouteId(id);
         validateRouteAccess(route);
         tourRouteRepository.delete(route);
+    }
+
+    @Transactional
+    public void setStatusPending(String objectKey) {
+        TourRoute route = tourRouteRepository.findByImageUrl(objectKey).orElseThrow(() -> new BadRequestException("Invalid object key"));
+        route.setStatus(RouteStatus.PENDING);
+        tourRouteRepository.save(route);
     }
 
     private void validateLocations(List<LocationDto> locations) {

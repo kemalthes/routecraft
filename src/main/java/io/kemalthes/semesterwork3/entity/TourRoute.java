@@ -1,8 +1,11 @@
 package io.kemalthes.semesterwork3.entity;
 
+import io.kemalthes.semesterwork3.entity.enums.RouteStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -50,6 +53,10 @@ public class TourRoute {
 
     @Column(name = "distance", precision = 12, scale = 3)
     private BigDecimal distance;
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "status")
+    private RouteStatus status;
 
     @Column(name = "duration_minutes")
     private Integer durationMinutes;

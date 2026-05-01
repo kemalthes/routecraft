@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public interface TourRouteRepository extends JpaRepository<TourRoute, UUID>, JpaSpecificationExecutor<TourRoute> {
@@ -18,5 +19,7 @@ public interface TourRouteRepository extends JpaRepository<TourRoute, UUID>, Jpa
         LOWER(t.description) LIKE LOWER(CONCAT('%', :query, '%'))
         """)
     Page<TourRoute> searchByTitleOrDescription(@Param("query") String query, Pageable pageable);
+
+    Optional<TourRoute> findByImageUrl(String imageUrl);
 }
 

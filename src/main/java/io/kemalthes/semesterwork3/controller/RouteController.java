@@ -1,6 +1,7 @@
 package io.kemalthes.semesterwork3.controller;
 
 import io.kemalthes.core.dto.CreateRouteRequest;
+import io.kemalthes.core.dto.CreateRouteResponse;
 import io.kemalthes.core.dto.PaginatedRoutesResponse;
 import io.kemalthes.core.dto.RouteFullResponse;
 import io.kemalthes.core.dto.UpdateRouteRequest;
@@ -48,13 +49,13 @@ public class RouteController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UUID createRoute(@Valid @RequestBody CreateRouteRequest request) {
+    public CreateRouteResponse createRoute(@Valid @RequestBody CreateRouteRequest request) {
         return routeService.createRoute(request);
     }
 
     @PutMapping
-    public UUID updateRouteMeta(@Valid @RequestBody UpdateRouteRequest request) {
-        return routeService.updateRouteMeta(request);
+    public UUID confirmRoute(@Valid @RequestBody UpdateRouteRequest request) {
+        return routeService.confirmRoute(request);
     }
 
     @DeleteMapping("/{id}")
