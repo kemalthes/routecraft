@@ -41,7 +41,7 @@ services:
       - "9001:9001"
     environment:
       MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: minio
+      MINIO_ROOT_PASSWORD: minioadmin
       MINIO_API_CORS_ALLOW_ORIGIN: http://host.docker.internal:5173
       MINIO_NOTIFY_WEBHOOK_ENABLE_myapp: on
       MINIO_NOTIFY_WEBHOOK_ENDPOINT_myapp: http://host.docker.internal:8080/api/webhooks/minio
@@ -55,7 +55,7 @@ services:
       - minio
     entrypoint: >
       /bin/sh -c "
-      until mc alias set myminio http://minio:9000 minio minio; do
+      until mc alias set myminio http://minio:9000 minio minioadmin; do
         echo 'Ожидание запуска MinIO...';
         sleep 2;
       done;

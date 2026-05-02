@@ -110,6 +110,29 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /auth/check-email-exists:
+    get:
+      tags:
+        - auth
+      summary: Проверить, зарегистрирован ли email
+      operationId: checkEmailExists
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: Результат проверки email
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckEmailExistsResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
   /users/me:
     get:
       tags:
@@ -659,6 +682,15 @@ components:
           enum:
             - ROLE_USER
             - ROLE_ADMIN
+
+    CheckEmailExistsResponse:
+      type: object
+      required:
+        - exists
+      properties:
+        exists:
+          type: boolean
+          example: true
 
     UserResponse:
       type: object

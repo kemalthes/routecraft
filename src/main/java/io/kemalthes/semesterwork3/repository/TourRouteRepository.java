@@ -1,5 +1,6 @@
 package io.kemalthes.semesterwork3.repository;
 
+import io.kemalthes.semesterwork3.entity.enums.RouteStatus;
 import io.kemalthes.semesterwork3.entity.TourRoute;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -13,13 +14,22 @@ import java.util.UUID;
 
 public interface TourRouteRepository extends JpaRepository<TourRoute, UUID>, JpaSpecificationExecutor<TourRoute> {
 
+    Page<TourRoute> findAllByStatus(RouteStatus status, Pageable pageable);
+
     @Query("""
         SELECT t FROM TourRoute t WHERE
+        t.status = :status AND (
         LOWER(t.title) LIKE LOWER(CONCAT('%', :query, '%')) OR
         LOWER(t.description) LIKE LOWER(CONCAT('%', :query, '%'))
+        )
         """)
-    Page<TourRoute> searchByTitleOrDescription(@Param("query") String query, Pageable pageable);
+    Page<TourRoute> searchByTitleOrDescription(
+            @Param("query") String query,
+            @Param("status") RouteStatus status,
+            Pageable pageable
+    );
 
     Optional<TourRoute> findByImageUrl(String imageUrl);
-}
 
+    Optional<TourRoute> findByIdAndStatus(UUID id, RouteStatus status);
+}

@@ -82,9 +82,9 @@ public class RouteService {
         Pageable pageable = PageRequest.of(currentPage - 1, itemsPerPage, Sort.by(Sort.Direction.ASC, "id"));
         Page<TourRoute> pageResult;
         if (query == null || query.isEmpty()) {
-            pageResult = tourRouteRepository.findAll(pageable);
+            pageResult = tourRouteRepository.findAllByStatus(RouteStatus.PUBLISHED, pageable);
         } else {
-            pageResult = tourRouteRepository.searchByTitleOrDescription(query, pageable);
+            pageResult = tourRouteRepository.searchByTitleOrDescription(query, RouteStatus.PUBLISHED, pageable);
         }
         int totalItems = (int) Math.min(Integer.MAX_VALUE, pageResult.getTotalElements());
         PaginationMeta meta = new PaginationMeta()
@@ -104,7 +104,9 @@ public class RouteService {
 
     @Transactional(readOnly = true)
     public RouteFullResponse getRouteById(UUID id) {
-        TourRoute route = findByRouteId(id);
+        if (id == null) throw new RouteNotFoundException(null);
+        TourRoute route = tourRouteRepository.findByIdAndStatus(id, RouteStatus.PUBLISHED)
+                .orElseThrow(() -> new RouteNotFoundException(id));
         String presignedUrl = minioService.getPresignedUrl(route.getImageUrl());
         return routeMapper.toRouteFullResponse(route, presignedUrl);
     }
