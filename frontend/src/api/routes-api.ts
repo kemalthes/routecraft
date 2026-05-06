@@ -3,7 +3,10 @@ import type {
   CreateRouteFormValues,
   CreateRouteRequest,
   CreateRouteResponse,
+  PaginatedReviewsResponse,
   PaginatedRoutesResponse,
+  ReviewRequest,
+  ReviewResponse,
   RouteFull,
   RouteLocationDto,
 } from "../types/routes";
@@ -32,6 +35,25 @@ export const routesApi = {
   async getRouteById(routeId: string) {
     const response = await apiClient.get<RouteFull>(`/routes/${routeId}`);
     return response.data;
+  },
+
+  async getReviewsByRoute(routeId: string, params?: { page?: number; limit?: number }) {
+    const response = await apiClient.get<PaginatedReviewsResponse>(`/routes/${routeId}/reviews`, {
+      params: {
+        page: params?.page ?? 1,
+        limit: params?.limit ?? 10,
+      },
+    });
+    return response.data;
+  },
+
+  async createReview(routeId: string, payload: ReviewRequest) {
+    const response = await apiClient.post<ReviewResponse>(`/routes/${routeId}/reviews`, payload);
+    return response.data;
+  },
+
+  async deleteReview(routeId: string, reviewId: string) {
+    await apiClient.delete(`/routes/${routeId}/reviews/${reviewId}`);
   },
 
   async createRouteWithImage(data: { form: CreateRouteFormValues; file?: File }) {

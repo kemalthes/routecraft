@@ -3,6 +3,8 @@ spring:
     name: core-service
   jpa:
     open-in-view: false
+    hibernate:
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true

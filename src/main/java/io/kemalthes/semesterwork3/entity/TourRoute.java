@@ -19,8 +19,8 @@ import org.hibernate.annotations.JdbcTypeCode;
 import java.sql.Types;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -76,6 +76,7 @@ public class TourRoute {
     @OneToMany(mappedBy = "route", cascade = CascadeType.REMOVE)
     private Set<Favorite> favorites = new HashSet<>();
 
+    @OrderBy("createdAt DESC")
     @OneToMany(mappedBy = "route", cascade = CascadeType.REMOVE)
-    private Set<Review> reviews = new HashSet<>();
+    private List<Review> reviews = new ArrayList<>();
 }

@@ -137,6 +137,17 @@ body {
   width: 100%;
 }
 
+.review-form {
+  margin-bottom: 16px;
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 @media (max-width: 992px) {
   .home-sider {
     display: none !important;

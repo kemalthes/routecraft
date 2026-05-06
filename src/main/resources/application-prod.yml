@@ -9,10 +9,6 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
-  jpa:
-    hibernate:
-      ddl-auto: validate
-
   data:
     redis:
       host: ${REDIS_HOST}
@@ -20,9 +16,11 @@ spring:
       password: ${REDIS_PASSWORD}
 
 minio:
-  endpoint: http://localhost:9000
-  accessKey: minio
-  secretKey: minio
-  bucket: routes
-  webhook-token: "Ваш_Секретный_Токен"
+  endpoint: ${MINIO_ENDPOINT}
+  accessKey: ${MINIO_USERNAME}
+  secretKey: ${MINIO_PASSWORD}
+  bucket: ${MINIO_BUCKET}
+  webhook-token: ${MINIO_WH_TOKEN}
   presignedUrlTtl: 10
+
+allowed-origins: ${ALLOWED_ORIGINS}

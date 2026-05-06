@@ -27,6 +27,11 @@ export interface ReviewResponse {
   createdAt: string;
 }
 
+export interface ReviewRequest {
+  rating: number;
+  comment: string;
+}
+
 export interface RouteFull {
   id: string;
   title: string;
@@ -49,6 +54,11 @@ export interface PaginationMeta {
 
 export interface PaginatedRoutesResponse {
   items: RoutePreview[];
+  meta: PaginationMeta;
+}
+
+export interface PaginatedReviewsResponse {
+  items: ReviewResponse[];
   meta: PaginationMeta;
 }
 

@@ -10,8 +10,6 @@ spring:
     driver-class-name: org.postgresql.Driver
 
   jpa:
-    hibernate:
-      ddl-auto: validate
     properties:
       hibernate:
         show_sql: true
@@ -29,3 +27,5 @@ minio:
   bucket: routes
   webhook-token: "Ваш_Секретный_Токен"
   presignedUrlTtl: 10
+
+allowed-origins: http://localhost:5173/

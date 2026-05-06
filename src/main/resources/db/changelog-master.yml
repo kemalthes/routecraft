@@ -7,3 +7,5 @@ databaseChangeLog:
       file: db/changelog/20260428-alter-tables.sql
   - include:
       file: db/changelog/20260428-alter-route.sql
+  - include:
+      file: db/changelog/20260503-add-review-created-at.sql

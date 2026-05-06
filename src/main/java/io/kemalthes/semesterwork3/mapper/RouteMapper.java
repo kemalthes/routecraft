@@ -12,7 +12,8 @@ import java.math.BigDecimal;
 
 @Mapper(
         componentModel = "spring",
-        unmappedTargetPolicy = ReportingPolicy.IGNORE
+        unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        uses = ReviewMapper.class
 )
 public interface RouteMapper {
 
@@ -24,6 +25,7 @@ public interface RouteMapper {
     @Mapping(target = "imageUrl", source = "presignedUrl")
     @Mapping(target = "distance", source = "route.distance", qualifiedByName = "routeBigDecimalToDouble")
     @Mapping(target = "authorName", source = "route.author.username")
+    @Mapping(target = "reviews", source = "route.reviews")
     RouteFullResponse toRouteFullResponse(TourRoute route, String presignedUrl);
 
     @Named("routeBigDecimalToDouble")
