@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button, Form, Input, List, Pagination, Popconfirm, Rate, Spin, Typography, message } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
 import { useRoutesStore } from "../../store/routes-store";
 import { usersApi } from "../../api/users-api";
 import { ApiClientError } from "../../types/api";
@@ -18,7 +17,6 @@ interface ReviewFormValues {
 const REVIEWS_PAGE_SIZE = 10;
 
 export const RouteReviewsSection = ({ routeId }: RouteReviewsSectionProps) => {
-  const navigate = useNavigate();
   const [reviewForm] = Form.useForm<ReviewFormValues>();
   const [messageApi, contextHolder] = message.useMessage();
   const [currentUsername, setCurrentUsername] = useState<string | null>(null);
@@ -101,7 +99,7 @@ export const RouteReviewsSection = ({ routeId }: RouteReviewsSectionProps) => {
       messageApi.success("Комментарий добавлен");
     } catch (error) {
       if (error instanceof ApiClientError && (error.status === 401 || error.status === 403)) {
-        navigate("/auth", { replace: true, state: { from: `/route/${routeId}` } });
+        messageApi.warning("Sign in to add reviews.");
         return;
       }
       messageApi.error(error instanceof ApiClientError ? error.message : "Не удалось добавить комментарий");
@@ -114,7 +112,7 @@ export const RouteReviewsSection = ({ routeId }: RouteReviewsSectionProps) => {
       messageApi.success("Комментарий удален");
     } catch (error) {
       if (error instanceof ApiClientError && (error.status === 401 || error.status === 403)) {
-        navigate("/auth", { replace: true, state: { from: `/route/${routeId}` } });
+        messageApi.warning("Sign in to delete reviews.");
         return;
       }
       messageApi.error(error instanceof ApiClientError ? error.message : "Не удалось удалить комментарий");

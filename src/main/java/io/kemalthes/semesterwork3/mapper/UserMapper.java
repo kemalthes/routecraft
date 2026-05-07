@@ -8,6 +8,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
+import java.util.List;
+
 @Mapper(
         componentModel = "spring",
         unmappedTargetPolicy = ReportingPolicy.IGNORE
@@ -16,6 +18,8 @@ public interface UserMapper {
 
     @Mapping(target = "role", expression = "java(resolveRole(user))")
     UserResponse toUserResponse(User user);
+
+    List<UserResponse> toUserResponseList(List<User> users);
 
     default String resolveRole(User user) {
         if (user == null || user.getRoles() == null) {

@@ -19,8 +19,6 @@ tags:
     description: Сохраненные маршруты
   - name: reviews
     description: Отзывы и рейтинги
-  - name: files
-    description: Загрузка файлов (MinIO)
   - name: admin
     description: Панель администратора
 
@@ -232,6 +230,40 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '404':
           $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /routes/my:
+    get:
+      tags:
+        - routes
+      summary: Получить маршруты текущего пользователя
+      operationId: getMyRoutes
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы (начиная с 1)
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          description: Количество элементов на странице
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Маршруты текущего пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRoutesResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
 
   /routes/{id}:
     get:
@@ -259,7 +291,7 @@ paths:
     delete:
       tags:
         - routes
-      summary: Удалить маршрут (только автор или админ)
+      summary: Удалить свой неопубликованный маршрут
       operationId: deleteRoute
       parameters:
         - name: id
@@ -268,6 +300,13 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: version
+          in: query
+          required: false
+          description: Ожидаемая версия маршрута для оптимистичной блокировки
+          schema:
+            type: integer
+            format: int64
       responses:
         '204':
           description: Маршрут удален
@@ -277,6 +316,8 @@ paths:
           $ref: '#/components/responses/ForbiddenError'
         '404':
           $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
 
   /favorites:
     get:
@@ -350,6 +391,8 @@ paths:
           description: Удалено
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
 
   /routes/{routeId}/reviews:
     get:
@@ -418,56 +461,33 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
 
-  /files/upload:
-    post:
+  /routes/{routeId}/reviews/{reviewId}:
+    delete:
       tags:
-        - files
-      summary: Загрузить изображение
-      operationId: uploadFile
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
-      responses:
-        '201':
-          description: Файл успешно загружен
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FileUrlResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestError'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-
-  /files/preview/{fileName}:
-    get:
-      tags:
-        - files
-      summary: Получить изображение
-      operationId: getFilePreview
+        - reviews
+      summary: Удалить отзыв
+      operationId: deleteReview
       parameters:
-        - name: fileName
+        - name: routeId
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
-        '200':
-          description: Бинарные данные изображения
-          content:
-            image/*:
-              schema:
-                type: string
-                format: binary
-        '404':
-          $ref: '#/components/responses/NotFoundError'
+        '204':
+          description: Удалено
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
 
   /admin/users:
     get:
@@ -475,42 +495,123 @@ paths:
         - admin
       summary: Список всех пользователей
       operationId: getAllUsersAdmin
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы (начиная с 1)
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          description: Количество элементов на странице
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/UserResponse'
+                $ref: '#/components/schemas/PaginatedUserResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
 
-  /admin/users/{userId}:
-    delete:
+  /admin/routes:
+    get:
       tags:
         - admin
-      summary: Удалить пользователя
-      operationId: deleteUserAdmin
+      summary: Получить маршруты для модерации
+      operationId: getAdminRoutes
       parameters:
-        - name: userId
-          in: path
-          required: true
+        - name: page
+          in: query
+          description: Номер страницы (начиная с 1)
           schema:
             type: integer
-            format: int64
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          description: Количество элементов на странице
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/RouteStatus'
       responses:
-        '204':
-          description: Пользователь удален
+        '200':
+          description: Список маршрутов для модерации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRoutesResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+    put:
+      tags:
+        - admin
+      summary: Одобрить маршрут
+      operationId: approveRoute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRouteRequest'
+      responses:
+        '201':
+          description: UUID маршрута
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
         '404':
           $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+    delete:
+      tags:
+        - admin
+      summary: Удалить маршрут администратором
+      operationId: deleteRouteAdmin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteRouteRequest'
+      responses:
+        '204':
+          description: Маршрут удален
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
 
 components:
   responses:
@@ -692,6 +793,13 @@ components:
           type: boolean
           example: true
 
+    RouteStatus:
+      type: string
+      enum:
+        - DRAFT
+        - PENDING
+        - PUBLISHED
+
     UserResponse:
       type: object
       properties:
@@ -707,6 +815,16 @@ components:
         createdAt:
           type: string
           format: date-time
+
+    PaginatedUserResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponse'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
 
     LocationDto:
       type: object
@@ -773,6 +891,9 @@ components:
         uuid:
           type: string
           format: uuid
+        version:
+          type: integer
+          format: int64
         title:
           type: string
           minLength: 5
@@ -781,13 +902,30 @@ components:
           type: string
           maxLength: 2000
 
+    DeleteRouteRequest:
+      type: object
+      required:
+        - uuid
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          format: int64
+
     RoutePreviewResponse:
       type: object
       properties:
         id:
           type: string
           format: uuid
+        version:
+          type: integer
+          format: int64
         title:
+          type: string
+        description:
           type: string
         imageUrl:
           type: string
@@ -800,6 +938,10 @@ components:
           minimum: 0
         authorName:
           type: string
+        status:
+          $ref: '#/components/schemas/RouteStatus'
+        is_liked:
+          type: boolean
 
     RouteFullResponse:
       type: object
@@ -807,6 +949,9 @@ components:
         id:
           type: string
           format: uuid
+        version:
+          type: integer
+          format: int64
         title:
           type: string
         description:
@@ -820,6 +965,8 @@ components:
           type: integer
         authorName:
           type: string
+        status:
+          $ref: '#/components/schemas/RouteStatus'
         locations:
           type: array
           items:
@@ -830,6 +977,8 @@ components:
             $ref: '#/components/schemas/ReviewResponse'
         geometry:
           type: string
+        is_liked:
+          type: boolean
 
     ReviewRequest:
       type: object
@@ -861,10 +1010,3 @@ components:
         createdAt:
           type: string
           format: date-time
-
-    FileUrlResponse:
-      type: object
-      properties:
-        url:
-          type: string
-          format: uri

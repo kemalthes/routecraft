@@ -5,3 +5,13 @@ export interface CurrentUserResponse {
   role: "USER" | "ADMIN" | string;
   createdAt?: string;
 }
+
+export interface PaginatedUserResponse {
+  items: CurrentUserResponse[];
+  meta: {
+    totalItems: number;
+    totalPages: number;
+    currentPage: number;
+    itemsPerPage: number;
+  };
+}

@@ -13,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Builder;
 import org.hibernate.annotations.JdbcTypeCode;
 
@@ -41,6 +42,9 @@ public class TourRoute {
     @Id
     @Column(name = "id", nullable = false)
     private UUID id;
+
+    @Version
+    private Long version;
 
     @Column(name = "title", length = 255, nullable = false)
     private String title;
@@ -71,12 +75,15 @@ public class TourRoute {
 
     @OrderBy("orderIndex ASC")
     @OneToMany(mappedBy = "route", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Location> locations = new ArrayList<>();
 
     @OneToMany(mappedBy = "route", cascade = CascadeType.REMOVE)
+    @Builder.Default
     private Set<Favorite> favorites = new HashSet<>();
 
     @OrderBy("createdAt DESC")
     @OneToMany(mappedBy = "route", cascade = CascadeType.REMOVE)
+    @Builder.Default
     private List<Review> reviews = new ArrayList<>();
 }

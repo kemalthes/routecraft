@@ -16,6 +16,9 @@ public interface TourRouteRepository extends JpaRepository<TourRoute, UUID>, Jpa
 
     Page<TourRoute> findAllByStatus(RouteStatus status, Pageable pageable);
 
+
+    Page<TourRoute> findAllByAuthorIdAndStatusNot(UUID authorId, RouteStatus status, Pageable pageable);
+
     @Query("""
         SELECT t FROM TourRoute t WHERE
         t.status = :status AND (

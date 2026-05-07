@@ -12,11 +12,15 @@ export interface RouteLocationDto {
 
 export interface RoutePreview {
   id: string;
+  version?: number;
   title: string;
+  description?: string;
   imageUrl: string;
   distance: number;
   durationMinutes: number;
   authorName: string;
+  status?: "DRAFT" | "PENDING" | "PUBLISHED" | string;
+  is_liked?: boolean;
 }
 
 export interface ReviewResponse {
@@ -34,15 +38,18 @@ export interface ReviewRequest {
 
 export interface RouteFull {
   id: string;
+  version?: number;
   title: string;
   description: string;
   imageUrl: string;
   distance: number;
   durationMinutes: number;
   authorName: string;
+  status?: "DRAFT" | "PENDING" | "PUBLISHED" | string;
   locations: RouteLocationDto[];
   reviews?: ReviewResponse[];
   geometry?: string;
+  is_liked?: boolean;
 }
 
 export interface PaginationMeta {
@@ -66,6 +73,18 @@ export interface CreateRouteRequest {
   title: string;
   description?: string;
   locations: RouteLocationDto[];
+}
+
+export interface UpdateRouteRequest {
+  uuid: string;
+  version?: number;
+  title: string;
+  description?: string;
+}
+
+export interface DeleteRouteRequest {
+  uuid: string;
+  version?: number;
 }
 
 export interface CreateRouteResponse {

@@ -4,7 +4,6 @@ import { Controller, useForm } from "react-hook-form";
 import { Button, Form, Input, Space, Typography, Upload, message } from "antd";
 import type { UploadFile } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
 import { ApiClientError } from "../../types/api";
 import { useRoutesStore } from "../../store/routes-store";
 import type { CreateRouteFormValues, RouteLocationFormPoint } from "../../types/routes";
@@ -17,7 +16,6 @@ interface RouteFormProps {
 }
 
 export const RouteForm = ({ onCreated }: RouteFormProps) => {
-  const navigate = useNavigate();
   const createRoute = useRoutesStore((state) => state.createRoute);
   const creating = useRoutesStore((state) => state.creating);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -96,7 +94,7 @@ export const RouteForm = ({ onCreated }: RouteFormProps) => {
     } catch (error) {
       if (error instanceof ApiClientError) {
         if (error.status === 401 || error.status === 403) {
-          navigate("/auth", { replace: true, state: { from: "/create" } });
+          messageApi.warning("Sign in to create routes.");
           return;
         }
 

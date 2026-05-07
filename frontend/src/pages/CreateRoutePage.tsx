@@ -19,7 +19,7 @@ export const CreateRoutePage = () => {
 
         <Card>
           <Typography.Title level={3}>Создание маршрута</Typography.Title>
-          <RouteForm onCreated={() => navigate("/")} />
+          <RouteForm onCreated={() => navigate("/my-routes")} />
         </Card>
       </Content>
     </Layout>

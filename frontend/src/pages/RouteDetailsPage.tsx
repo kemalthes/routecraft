@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Button, Card, Descriptions, Image, Layout, Spin, Typography } from "antd";
-import { ArrowLeftOutlined } from "@ant-design/icons";
+import { Button, Card, Descriptions, Image, Layout, Spin, Typography, message } from "antd";
+import { ArrowLeftOutlined, HeartFilled, HeartOutlined } from "@ant-design/icons";
 import { MapContainer, Polyline, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import { useRoutesStore } from "../store/routes-store";
@@ -29,10 +29,13 @@ const RouteBounds = ({ positions }: { positions: [number, number][] }) => {
 
 export const RouteDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
+  const [messageApi, contextHolder] = message.useMessage();
   const selectedRoute = useRoutesStore((state) => state.selectedRoute);
   const routeLoading = useRoutesStore((state) => state.routeLoading);
+  const togglingFavoriteId = useRoutesStore((state) => state.togglingFavoriteId);
   const errorMessage = useRoutesStore((state) => state.errorMessage);
   const selectRoute = useRoutesStore((state) => state.selectRoute);
+  const toggleFavorite = useRoutesStore((state) => state.toggleFavorite);
 
   useEffect(() => {
     if (id) {
@@ -59,19 +62,37 @@ export const RouteDetailsPage = () => {
       <div className="details-grid">
         <Card>
           <Image src={selectedRoute.imageUrl} alt={selectedRoute.title} className="details-image" />
-          <Typography.Title level={3} style={{ marginTop: 16 }}>
-            {selectedRoute.title}
-          </Typography.Title>
+          <div className="details-title-row">
+            <Typography.Title level={3} style={{ marginTop: 16 }}>
+              {selectedRoute.title}
+            </Typography.Title>
+            <Button
+              icon={selectedRoute.is_liked ? <HeartFilled /> : <HeartOutlined />}
+              loading={togglingFavoriteId === selectedRoute.id}
+              type={selectedRoute.is_liked ? "primary" : "default"}
+              onClick={() => {
+                if (!localStorage.getItem("accessToken")) {
+                  messageApi.warning("Sign in to add routes to favorites.");
+                  return;
+                }
+                void toggleFavorite(selectedRoute.id, !selectedRoute.is_liked).catch(() => {
+                  messageApi.error("Favorite update failed. Refresh the page and try again.");
+                });
+              }}
+            >
+              {selectedRoute.is_liked ? "In favorites" : "Favorite"}
+            </Button>
+          </div>
           <Typography.Paragraph>{selectedRoute.description}</Typography.Paragraph>
           <Descriptions bordered column={1} size="small">
-            <Descriptions.Item label="Автор">{selectedRoute.authorName}</Descriptions.Item>
-            <Descriptions.Item label="Дистанция">{selectedRoute.distance.toFixed(1)} км</Descriptions.Item>
-            <Descriptions.Item label="Длительность">{selectedRoute.durationMinutes} мин</Descriptions.Item>
-            <Descriptions.Item label="Точек маршрута">{selectedRoute.locations.length}</Descriptions.Item>
+            <Descriptions.Item label="Author">{selectedRoute.authorName}</Descriptions.Item>
+            <Descriptions.Item label="Distance">{selectedRoute.distance.toFixed(1)} km</Descriptions.Item>
+            <Descriptions.Item label="Duration">{selectedRoute.durationMinutes} min</Descriptions.Item>
+            <Descriptions.Item label="Points">{selectedRoute.locations.length}</Descriptions.Item>
           </Descriptions>
         </Card>
 
-        <Card title="Маршрут на карте">
+        <Card title="Route map">
           <div className="details-map">
             <MapContainer center={[55.751244, 37.618423]} zoom={11} style={{ width: "100%", height: "100%" }}>
               <TileLayer
@@ -89,25 +110,26 @@ export const RouteDetailsPage = () => {
         </Card>
 
         {id && (
-          <Card title="Комментарии">
+          <Card title="Reviews">
             <RouteReviewsSection routeId={id} />
           </Card>
         )}
       </div>
     );
   } else {
-    content = <Typography.Text>Маршрут не найден</Typography.Text>;
+    content = <Typography.Text>Route not found</Typography.Text>;
   }
 
   return (
     <Layout className="details-layout">
+      {contextHolder}
       <Content className="details-content">
         <div className="details-header">
           <Link to="/">
-            <Button icon={<ArrowLeftOutlined />}>На главную</Button>
+            <Button icon={<ArrowLeftOutlined />}>Back</Button>
           </Link>
           <Link to="/create">
-            <Button type="primary">Создать маршрут</Button>
+            <Button type="primary">Create route</Button>
           </Link>
         </div>
         {content}

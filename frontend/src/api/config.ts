@@ -20,6 +20,14 @@ export const uploadClient = axios.create({
   timeout: 30000,
 });
 
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem("accessToken");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const toApiClientError = (error: unknown): ApiClientError => {
   if (!axios.isAxiosError(error)) {
     return new ApiClientError({

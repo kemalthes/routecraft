@@ -1,15 +1,23 @@
-import { Card, Typography } from "antd";
+import { Button, Card, Typography } from "antd";
+import { HeartFilled, HeartOutlined } from "@ant-design/icons";
 import type { RoutePreview } from "../../types/routes";
 
 interface RoutePreviewCardProps {
   route: RoutePreview;
   onClick: (id: string) => void;
+  onToggleFavorite?: (id: string, nextLiked: boolean) => void;
+  favoriteLoading?: boolean;
 }
 
 const TRANSPARENT_FALLBACK =
   "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
 
-export const RoutePreviewCard = ({ route, onClick }: RoutePreviewCardProps) => (
+export const RoutePreviewCard = ({
+  route,
+  onClick,
+  onToggleFavorite,
+  favoriteLoading,
+}: RoutePreviewCardProps) => (
   <Card
     hoverable
     className="route-preview-card"
@@ -26,9 +34,24 @@ export const RoutePreviewCard = ({ route, onClick }: RoutePreviewCardProps) => (
       />
     }
   >
-    <Typography.Title level={5}>{route.title}</Typography.Title>
+    <div className="route-card-title-row">
+      <Typography.Title level={5}>{route.title}</Typography.Title>
+      {onToggleFavorite && (
+        <Button
+          aria-label={route.is_liked ? "Remove from favorites" : "Add to favorites"}
+          icon={route.is_liked ? <HeartFilled /> : <HeartOutlined />}
+          loading={favoriteLoading}
+          shape="circle"
+          type={route.is_liked ? "primary" : "default"}
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleFavorite(route.id, !route.is_liked);
+          }}
+        />
+      )}
+    </div>
     <Typography.Text type="secondary">
-      {route.distance.toFixed(1)} км · {route.durationMinutes} мин · {route.authorName}
+      {route.distance.toFixed(1)} km | {route.durationMinutes} min | {route.authorName}
     </Typography.Text>
   </Card>
 );

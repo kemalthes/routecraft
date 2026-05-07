@@ -9,3 +9,7 @@ databaseChangeLog:
       file: db/changelog/20260428-alter-route.sql
   - include:
       file: db/changelog/20260503-add-review-created-at.sql
+  - include:
+      file: db/changelog/20260507-add-route-version.sql
+  - include:
+      file: db/changelog/20260506-seed-test-data.sql

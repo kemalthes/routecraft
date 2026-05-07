@@ -17,15 +17,15 @@ spring:
   data:
     redis:
       host: localhost
-      port: 6379
+      port: 16379
       password: redis
 
 minio:
   endpoint: http://localhost:9000
   accessKey: minio
-  secretKey: minio
+  secretKey: minioadmin
   bucket: routes
-  webhook-token: "Ваш_Секретный_Токен"
+  webhook-token: "secret_key"
   presignedUrlTtl: 10
 
 allowed-origins: http://localhost:5173/

@@ -44,7 +44,7 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin
       MINIO_API_CORS_ALLOW_ORIGIN: http://host.docker.internal:5173
       MINIO_NOTIFY_WEBHOOK_ENABLE_myapp: on
-      MINIO_NOTIFY_WEBHOOK_ENDPOINT_myapp: http://host.docker.internal:8080/api/webhooks/minio
+      MINIO_NOTIFY_WEBHOOK_ENDPOINT_myapp: http://host.docker.internal:8081/webhooks/minio
       MINIO_NOTIFY_WEBHOOK_AUTH_TOKEN_myapp: "secret_key"
     volumes:
       - minio_data:/data

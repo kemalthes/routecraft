@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -103,6 +104,14 @@ public class GlobalExceptionHandler {
         return buildResponse("DatabaseError",
                 "A data integrity error occurred. Please try again later.",
                 HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLockingFailureException(OptimisticLockingFailureException e) {
+        log.error("Optimistic locking failure: ", e);
+        return buildResponse("OptimisticLockingFailure",
+                "The entity has been modified by another user. Please refresh the page and try again.",
+                HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(Exception.class)

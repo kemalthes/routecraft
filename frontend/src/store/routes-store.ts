@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { favoritesApi } from "../api/favorites-api";
 import { routesApi } from "../api/routes-api";
 import { ApiClientError } from "../types/api";
 import type {
@@ -25,7 +26,11 @@ interface FetchRoutesParams {
 
 interface RoutesState {
   routes: RoutePreview[];
+  favorites: RoutePreview[];
+  myRoutes: RoutePreview[];
   pagination: PaginationMeta;
+  favoritesPagination: PaginationMeta;
+  myRoutesPagination: PaginationMeta;
   reviews: ReviewResponse[];
   reviewsPagination: PaginationMeta;
   routesLoading: boolean;
@@ -34,21 +39,31 @@ interface RoutesState {
   creating: boolean;
   creatingReview: boolean;
   deletingReviewId: string | null;
+  togglingFavoriteId: string | null;
   selectedRouteId: string | null;
   selectedRoute: RouteFull | null;
   errorMessage: string | null;
   fetchRoutes: (params?: FetchRoutesParams) => Promise<void>;
+  fetchFavorites: (params?: { page?: number; limit?: number }) => Promise<void>;
+  fetchMyRoutes: (params?: { page?: number; limit?: number }) => Promise<void>;
   selectRoute: (routeId: string) => Promise<void>;
   fetchReviews: (routeId: string, params?: { page?: number; limit?: number }) => Promise<void>;
   createReview: (routeId: string, payload: ReviewRequest) => Promise<ReviewResponse>;
   deleteReview: (routeId: string, reviewId: string) => Promise<void>;
+  toggleFavorite: (routeId: string, nextLiked: boolean) => Promise<void>;
+  updateRoute: (payload: { uuid: string; version?: number; title: string; description?: string }) => Promise<void>;
+  deleteRoute: (routeId: string, version?: number) => Promise<void>;
   clearSelection: () => void;
   createRoute: (form: CreateRouteFormValues, file?: File) => Promise<string>;
 }
 
 export const useRoutesStore = create<RoutesState>()((set, get) => ({
   routes: [],
+  favorites: [],
+  myRoutes: [],
   pagination: defaultPagination,
+  favoritesPagination: defaultPagination,
+  myRoutesPagination: defaultPagination,
   reviews: [],
   reviewsPagination: defaultPagination,
   routesLoading: false,
@@ -57,6 +72,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
   creating: false,
   creatingReview: false,
   deletingReviewId: null,
+  togglingFavoriteId: null,
   selectedRouteId: null,
   selectedRoute: null,
   errorMessage: null,
@@ -72,6 +88,40 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
     } catch (error) {
       const message =
         error instanceof ApiClientError ? error.message : "Failed to fetch routes";
+      set({ errorMessage: message });
+    } finally {
+      set({ routesLoading: false });
+    }
+  },
+
+  fetchFavorites: async (params) => {
+    set({ routesLoading: true, errorMessage: null });
+    try {
+      const response = await favoritesApi.getFavorites(params);
+      set({
+        favorites: (response.items ?? []).map((route) => ({ ...route, is_liked: true })),
+        favoritesPagination: response.meta ?? defaultPagination,
+      });
+    } catch (error) {
+      const message =
+        error instanceof ApiClientError ? error.message : "Failed to fetch favorites";
+      set({ errorMessage: message });
+    } finally {
+      set({ routesLoading: false });
+    }
+  },
+
+  fetchMyRoutes: async (params) => {
+    set({ routesLoading: true, errorMessage: null });
+    try {
+      const response = await routesApi.getMyRoutes(params);
+      set({
+        myRoutes: response.items ?? [],
+        myRoutesPagination: response.meta ?? defaultPagination,
+      });
+    } catch (error) {
+      const message =
+        error instanceof ApiClientError ? error.message : "Failed to fetch your routes";
       set({ errorMessage: message });
     } finally {
       set({ routesLoading: false });
@@ -143,6 +193,77 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
       throw error;
     } finally {
       set({ deletingReviewId: null });
+    }
+  },
+
+  toggleFavorite: async (routeId, nextLiked) => {
+    const previousRoutes = get().routes;
+    const previousFavorites = get().favorites;
+    const previousSelectedRoute = get().selectedRoute;
+    const applyLiked = (route: RoutePreview) =>
+      route.id === routeId ? { ...route, is_liked: nextLiked } : route;
+
+    set({
+      togglingFavoriteId: routeId,
+      routes: previousRoutes.map(applyLiked),
+      favorites: nextLiked
+        ? previousFavorites
+        : previousFavorites.filter((route) => route.id !== routeId),
+      selectedRoute:
+        previousSelectedRoute?.id === routeId
+          ? { ...previousSelectedRoute, is_liked: nextLiked }
+          : previousSelectedRoute,
+      errorMessage: null,
+    });
+
+    try {
+      if (nextLiked) {
+        await favoritesApi.addFavorite(routeId);
+      } else {
+        await favoritesApi.removeFavorite(routeId);
+      }
+    } catch (error) {
+      const message =
+        error instanceof ApiClientError ? error.message : "Failed to update favorites";
+      set({
+        routes: previousRoutes,
+        favorites: previousFavorites,
+        selectedRoute: previousSelectedRoute,
+        errorMessage: message,
+      });
+      throw error;
+    } finally {
+      set({ togglingFavoriteId: null });
+    }
+  },
+
+  updateRoute: async (payload) => {
+    set({ errorMessage: null });
+    try {
+      await routesApi.updateRoute(payload);
+      const page = get().myRoutesPagination.currentPage || 1;
+      const limit = get().myRoutesPagination.itemsPerPage || 10;
+      await get().fetchMyRoutes({ page, limit });
+    } catch (error) {
+      const message =
+        error instanceof ApiClientError ? error.message : "Failed to update route";
+      set({ errorMessage: message });
+      throw error;
+    }
+  },
+
+  deleteRoute: async (routeId, version) => {
+    set({ errorMessage: null });
+    try {
+      await routesApi.deleteRoute(routeId, version);
+      const page = get().myRoutesPagination.currentPage || 1;
+      const limit = get().myRoutesPagination.itemsPerPage || 10;
+      await get().fetchMyRoutes({ page, limit });
+    } catch (error) {
+      const message =
+        error instanceof ApiClientError ? error.message : "Failed to delete route";
+      set({ errorMessage: message });
+      throw error;
     }
   },
 

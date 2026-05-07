@@ -9,6 +9,7 @@ import type {
   ReviewResponse,
   RouteFull,
   RouteLocationDto,
+  UpdateRouteRequest,
 } from "../types/routes";
 
 const mapFormLocationsToDto = (
@@ -37,6 +38,16 @@ export const routesApi = {
     return response.data;
   },
 
+  async getMyRoutes(params?: { page?: number; limit?: number }) {
+    const response = await apiClient.get<PaginatedRoutesResponse>("/routes/my", {
+      params: {
+        page: params?.page ?? 1,
+        limit: params?.limit ?? 10,
+      },
+    });
+    return response.data;
+  },
+
   async getReviewsByRoute(routeId: string, params?: { page?: number; limit?: number }) {
     const response = await apiClient.get<PaginatedReviewsResponse>(`/routes/${routeId}/reviews`, {
       params: {
@@ -54,6 +65,17 @@ export const routesApi = {
 
   async deleteReview(routeId: string, reviewId: string) {
     await apiClient.delete(`/routes/${routeId}/reviews/${reviewId}`);
+  },
+
+  async updateRoute(payload: UpdateRouteRequest) {
+    const response = await apiClient.put<string>("/routes", payload);
+    return response.data;
+  },
+
+  async deleteRoute(routeId: string, version?: number) {
+    await apiClient.delete(`/routes/${routeId}`, {
+      params: version === undefined ? undefined : { version },
+    });
   },
 
   async createRouteWithImage(data: { form: CreateRouteFormValues; file?: File }) {

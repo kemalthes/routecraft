@@ -7,8 +7,10 @@ interface HomeRoutesSectionProps {
   routes: RoutePreview[];
   errorMessage: string | null;
   pagination: PaginationMeta;
+  togglingFavoriteId?: string | null;
   onOpenRoute: (id: string) => void;
   onPageChange: (page: number, pageSize: number) => void;
+  onToggleFavorite?: (id: string, nextLiked: boolean) => void;
 }
 
 export const HomeRoutesSection = ({
@@ -16,8 +18,10 @@ export const HomeRoutesSection = ({
   routes,
   errorMessage,
   pagination,
+  togglingFavoriteId,
   onOpenRoute,
   onPageChange,
+  onToggleFavorite,
 }: HomeRoutesSectionProps) => {
   if (errorMessage) {
     return (
@@ -44,7 +48,12 @@ export const HomeRoutesSection = ({
       <Row gutter={[16, 16]}>
         {routes.map((route) => (
           <Col xs={24} sm={12} xl={8} key={route.id}>
-            <RoutePreviewCard route={route} onClick={onOpenRoute} />
+            <RoutePreviewCard
+              route={route}
+              onClick={onOpenRoute}
+              onToggleFavorite={onToggleFavorite}
+              favoriteLoading={togglingFavoriteId === route.id}
+            />
           </Col>
         ))}
       </Row>

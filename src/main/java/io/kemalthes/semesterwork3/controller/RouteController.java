@@ -42,6 +42,14 @@ public class RouteController {
         return routeService.getRoutes(page, limit, search);
     }
 
+    @GetMapping("/my")
+    public PaginatedRoutesResponse getMyRoutes(
+            @RequestParam(defaultValue = "1") @Min(1) Integer page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) Integer limit
+    ) {
+        return routeService.getMyRoutes(page, limit);
+    }
+
     @GetMapping("/{id}")
     public RouteFullResponse getRouteById(@PathVariable UUID id) {
         return routeService.getRouteById(id);
@@ -54,13 +62,16 @@ public class RouteController {
     }
 
     @PutMapping
-    public UUID confirmRoute(@Valid @RequestBody UpdateRouteRequest request) {
-        return routeService.confirmRoute(request);
+    public UUID updateRoute(@Valid @RequestBody UpdateRouteRequest request) {
+        return routeService.updateRoute(request);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteRoute(@PathVariable UUID id) {
-        routeService.deleteRoute(id);
+    public void deleteRoute(
+            @PathVariable UUID id,
+            @RequestParam(required = false) Long version
+    ) {
+        routeService.deleteOwnUnpublishedRoute(id, version);
     }
 }
