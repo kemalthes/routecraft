@@ -1,0 +1,92 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  data:
+    redis:
+      host: localhost
+      port: 16379
+      password: redis
+  cloud:
+    gateway:
+      default-filters:
+        - RemoveRequestHeader=X-User-Id
+        - RemoveRequestHeader=X-User-Role
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: http://localhost:5173
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+      routes:
+        - id: openapi-search
+          uri: ${SEARCH_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/v3/api-docs/search
+          filters:
+            - RewritePath=/v3/api-docs/search, /v3/api-docs
+        - id: openapi-core
+          uri: ${CORE_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/v3/api-docs/core
+          filters:
+            - RewritePath=/v3/api-docs/core, /v3/api-docs
+        - id: search-service
+          uri: ${SEARCH_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/search/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                key-resolver: "#{@ipKeyResolver}"
+            - AuthFilter
+            - name: CircuitBreaker
+              args:
+                name: searchCircuitBreaker
+                fallbackUri: forward:/fallback/search-error
+        - id: core-service-public
+          uri: ${CORE_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 2
+                redis-rate-limiter.burstCapacity: 5
+                key-resolver: "#{@ipKeyResolver}"
+        - id: core-service-private
+          uri: ${CORE_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/**
+          filters:
+            - AuthFilter
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Core Service API
+        url: /v3/api-docs/core
+      - name: Search Service API
+        url: /v3/api-docs/search
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      searchCircuitBreaker:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+  timelimiter:
+    instances:
+      searchCircuitBreaker:
+        timeoutDuration: 10s
+
+auth:
+  validate-uri: ${CORE_SERVICE_VALIDATE_URL:http://localhost:8081/api/auth/validate}
