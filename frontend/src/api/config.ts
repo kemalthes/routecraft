@@ -34,7 +34,7 @@ let refreshPromise: Promise<AuthResponse> | null = null;
 const refreshAccessToken = async () => {
   const refreshToken = localStorage.getItem("refreshToken");
   if (!refreshToken) {
-    throw new Error("Refresh token is missing");
+    throw new Error("Refresh token отсутствует");
   }
   if (!refreshPromise) {
     refreshPromise = axios
@@ -81,7 +81,7 @@ apiClient.interceptors.response.use(
 export const toApiClientError = (error: unknown): ApiClientError => {
   if (!axios.isAxiosError(error)) {
     return new ApiClientError({
-      message: "Unexpected client error",
+      message: "Неожиданная ошибка клиента",
     });
   }
 
@@ -109,7 +109,7 @@ export const toApiClientError = (error: unknown): ApiClientError => {
   }
 
   return new ApiClientError({
-    message: axiosError.message || "Request failed",
+    message: axiosError.message || "Запрос не выполнен",
     status,
   });
 };

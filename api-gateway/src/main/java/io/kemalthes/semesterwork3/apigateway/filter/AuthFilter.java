@@ -63,8 +63,11 @@ public class AuthFilter extends AbstractGatewayFilterFactory<AuthFilterConfig> {
                         return chain.filter(newExchange);
                     })
                     .onErrorResume(error -> {
-                        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-                        return exchange.getResponse().setComplete();
+                        if (!config.isRequired()) {
+                            return chain.filter(sanitizedExchange);
+                        }
+                        sanitizedExchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                        return sanitizedExchange.getResponse().setComplete();
                     });
         };
     }

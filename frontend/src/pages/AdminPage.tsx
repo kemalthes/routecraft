@@ -33,6 +33,16 @@ const defaultMeta: PaginationMeta = {
 
 type DraftValues = Record<string, { title: string; description: string }>;
 
+const statusLabel = (status?: string) => {
+  if (status === "PUBLISHED") {
+    return "Опубликован";
+  }
+  if (status === "PENDING") {
+    return "На проверке";
+  }
+  return "Черновик";
+};
+
 export const AdminPage = () => {
   const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
@@ -81,7 +91,7 @@ export const AdminPage = () => {
         ),
       );
     } catch (error) {
-      messageApi.error(error instanceof ApiClientError ? error.message : "Admin data loading failed");
+      messageApi.error(error instanceof ApiClientError ? error.message : "Не удалось загрузить данные админки");
     } finally {
       setLoading(false);
     }
@@ -94,7 +104,7 @@ export const AdminPage = () => {
 
   const handleConflict = async (error: unknown) => {
     if (error instanceof ApiClientError && error.status === 409) {
-      messageApi.warning("Route was changed by another request. Fresh data loaded.");
+      messageApi.warning("Маршрут изменился в другом запросе. Загружены свежие данные.");
       await loadData();
       return true;
     }
@@ -114,11 +124,11 @@ export const AdminPage = () => {
         title: draft.title.trim(),
         description: draft.description.trim(),
       });
-      messageApi.success("Route approved");
+      messageApi.success("Маршрут опубликован");
       await loadData();
     } catch (error) {
       if (!(await handleConflict(error))) {
-        messageApi.error(error instanceof ApiClientError ? error.message : "Route approval failed");
+        messageApi.error(error instanceof ApiClientError ? error.message : "Не удалось опубликовать маршрут");
       }
     } finally {
       setBusyRouteId(null);
@@ -129,11 +139,11 @@ export const AdminPage = () => {
     setBusyRouteId(route.id);
     try {
       await adminApi.deleteRoute({ uuid: route.id, version: route.version });
-      messageApi.success("Route deleted");
+      messageApi.success("Маршрут удален");
       await loadData();
     } catch (error) {
       if (!(await handleConflict(error))) {
-        messageApi.error(error instanceof ApiClientError ? error.message : "Route delete failed");
+        messageApi.error(error instanceof ApiClientError ? error.message : "Не удалось удалить маршрут");
       }
     } finally {
       setBusyRouteId(null);
@@ -146,10 +156,10 @@ export const AdminPage = () => {
       <Content className="details-content">
         <div className="details-header">
           <Link to="/">
-            <Button icon={<ArrowLeftOutlined />}>Back</Button>
+            <Button icon={<ArrowLeftOutlined />}>Назад</Button>
           </Link>
           <Typography.Title level={3} style={{ margin: 0 }}>
-            Admin panel
+            Админ-панель
           </Typography.Title>
         </div>
 
@@ -159,17 +169,17 @@ export const AdminPage = () => {
           </div>
         ) : (
           <div className="admin-grid">
-            <Card title="Users">
+            <Card title="Пользователи">
               <Table
                 dataSource={users}
                 pagination={false}
                 rowKey="id"
                 size="small"
                 columns={[
-                  { title: "Name", dataIndex: "username" },
-                  { title: "Email", dataIndex: "email" },
-                  { title: "Role", dataIndex: "role" },
-                  { title: "Created", dataIndex: "createdAt" },
+                  { title: "Имя", dataIndex: "username" },
+                  { title: "Электронная почта", dataIndex: "email" },
+                  { title: "Роль", dataIndex: "role" },
+                  { title: "Создан", dataIndex: "createdAt" },
                 ]}
               />
               <Pagination
@@ -182,15 +192,14 @@ export const AdminPage = () => {
             </Card>
 
             <Card
-              title="Route moderation"
+              title="Модерация маршрутов"
               extra={
                 <Select
                   value={status}
                   style={{ width: 140 }}
                   options={[
-                    { value: "PENDING", label: "Pending" },
-                    { value: "DRAFT", label: "Draft" },
-                    { value: "PUBLISHED", label: "Published" },
+                    { value: "PENDING", label: "На проверке" },
+                    { value: "PUBLISHED", label: "Опубликованные" },
                   ]}
                   onChange={(value) => {
                     setStatus(value);
@@ -200,21 +209,21 @@ export const AdminPage = () => {
               }
             >
               <Space orientation="vertical" size={16} style={{ width: "100%" }}>
-                {routes.length === 0 && <Typography.Text>No routes</Typography.Text>}
+                {routes.length === 0 && <Typography.Text>Маршрутов нет</Typography.Text>}
                 {routes.map((route) => (
                   <Card key={route.id} className="route-manage-card">
                     <div className="route-manage-grid">
                       <img src={route.imageUrl} alt={route.title} className="route-manage-image" />
                       <Form layout="vertical" requiredMark={false}>
                         <Space style={{ marginBottom: 8 }} wrap>
-                          <Tag>{route.status}</Tag>
-                          <Typography.Text type="secondary">Version {route.version ?? 0}</Typography.Text>
+                          <Tag>{statusLabel(route.status)}</Tag>
+                          <Typography.Text type="secondary">Версия {route.version ?? 0}</Typography.Text>
                         </Space>
                         <Descriptions size="small" column={1} style={{ marginBottom: 12 }}>
-                          <Descriptions.Item label="Author">{route.authorName}</Descriptions.Item>
-                          <Descriptions.Item label="Distance">{route.distance?.toFixed(1)} km</Descriptions.Item>
+                          <Descriptions.Item label="Автор">{route.authorName}</Descriptions.Item>
+                          <Descriptions.Item label="Дистанция">{route.distance?.toFixed(1)} км</Descriptions.Item>
                         </Descriptions>
-                        <Form.Item label="Title">
+                        <Form.Item label="Название">
                           <Input
                             value={drafts[route.id]?.title ?? route.title}
                             onChange={(event) =>
@@ -228,7 +237,7 @@ export const AdminPage = () => {
                             }
                           />
                         </Form.Item>
-                        <Form.Item label="Description">
+                        <Form.Item label="Описание">
                           <Input.TextArea
                             rows={4}
                             value={drafts[route.id]?.description ?? route.description ?? ""}
@@ -250,7 +259,7 @@ export const AdminPage = () => {
                             type="primary"
                             onClick={() => void approveRoute(route)}
                           >
-                            Approve
+                            Опубликовать
                           </Button>
                           <Button
                             danger
@@ -258,7 +267,7 @@ export const AdminPage = () => {
                             loading={busyRouteId === route.id}
                             onClick={() => void deleteRoute(route)}
                           >
-                            Delete
+                            Удалить
                           </Button>
                         </Space>
                       </Form>

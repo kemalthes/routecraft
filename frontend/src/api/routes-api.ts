@@ -48,6 +48,11 @@ export const routesApi = {
     return response.data;
   },
 
+  async getMyRouteById(routeId: string) {
+    const response = await apiClient.get<RouteFull>(`/routes/my/${routeId}`);
+    return response.data;
+  },
+
   async getReviewsByRoute(routeId: string, params?: { page?: number; limit?: number }) {
     const response = await apiClient.get<PaginatedReviewsResponse>(`/routes/${routeId}/reviews`, {
       params: {

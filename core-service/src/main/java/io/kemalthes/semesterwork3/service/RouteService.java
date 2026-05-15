@@ -119,7 +119,7 @@ public class RouteService {
                 limit == null ? 10 : limit,
                 Sort.by(Sort.Direction.ASC, "id")
         );
-        Page<TourRoute> pageResult = tourRouteRepository.findAllByAuthorIdAndStatusNot(currentUserId, RouteStatus.PUBLISHED, pageable);
+        Page<TourRoute> pageResult = tourRouteRepository.findAllByAuthorId(currentUserId, pageable);
         int currentPage = page == null ? 1 : page;
         int itemsPerPage = limit == null ? 10 : limit;
         int totalItems = (int) Math.min(Integer.MAX_VALUE, pageResult.getTotalElements());
@@ -182,6 +182,17 @@ public class RouteService {
                 .orElseThrow(() -> new RouteNotFoundException(id));
         String presignedUrl = minioService.getPresignedUrl(route.getImageUrl());
         return routeMapper.toRouteFullResponse(route, presignedUrl, isRouteLikedByCurrentUser(id));
+    }
+
+    @Transactional(readOnly = true)
+    public RouteFullResponse getOwnUnpublishedRouteById(UUID id) {
+        if (id == null) {
+            throw new RouteNotFoundException(null);
+        }
+        TourRoute route = findByRouteId(id);
+        validateOwnUnpublishedRouteAccess(route);
+        String presignedUrl = minioService.getPresignedUrl(route.getImageUrl());
+        return routeMapper.toRouteFullResponse(route, presignedUrl, false);
     }
 
     @Transactional

@@ -1,31 +1,12 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Button, Card, Descriptions, Image, Layout, Spin, Typography, message } from "antd";
 import { ArrowLeftOutlined, HeartFilled, HeartOutlined } from "@ant-design/icons";
-import { MapContainer, Polyline, TileLayer, useMap } from "react-leaflet";
-import L from "leaflet";
 import { useRoutesStore } from "../store/routes-store";
 import { RouteReviewsSection } from "../components/reviews/RouteReviewsSection";
+import { RouteReadonlyMap } from "../components/routes/RouteReadonlyMap";
 
 const { Content } = Layout;
-
-const RouteBounds = ({ positions }: { positions: [number, number][] }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    if (positions.length < 2) {
-      return;
-    }
-
-    map.fitBounds(L.latLngBounds(positions), {
-      padding: [48, 48],
-      animate: true,
-      duration: 0.8,
-    });
-  }, [map, positions]);
-
-  return null;
-};
 
 export const RouteDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -42,11 +23,6 @@ export const RouteDetailsPage = () => {
       void selectRoute(id);
     }
   }, [id, selectRoute]);
-
-  const positions = useMemo<[number, number][]>(
-    () => selectedRoute?.locations.map((point) => [point.latitude, point.longitude]) ?? [],
-    [selectedRoute?.locations],
-  );
 
   let content;
   if (routeLoading) {
@@ -72,52 +48,41 @@ export const RouteDetailsPage = () => {
               type={selectedRoute.is_liked ? "primary" : "default"}
               onClick={() => {
                 if (!localStorage.getItem("accessToken")) {
-                  messageApi.warning("Sign in to add routes to favorites.");
+                  messageApi.warning("Войдите, чтобы добавлять маршруты в избранное.");
                   return;
                 }
                 void toggleFavorite(selectedRoute.id, !selectedRoute.is_liked).catch(() => {
-                  messageApi.error("Favorite update failed. Refresh the page and try again.");
+                  messageApi.error("Не удалось обновить избранное. Обновите страницу и попробуйте снова.");
                 });
               }}
             >
-              {selectedRoute.is_liked ? "In favorites" : "Favorite"}
+              {selectedRoute.is_liked ? "В избранном" : "В избранное"}
             </Button>
           </div>
           <Typography.Paragraph>{selectedRoute.description}</Typography.Paragraph>
           <Descriptions bordered column={1} size="small">
-            <Descriptions.Item label="Author">{selectedRoute.authorName}</Descriptions.Item>
-            <Descriptions.Item label="Distance">{selectedRoute.distance.toFixed(1)} km</Descriptions.Item>
-            <Descriptions.Item label="Duration">{selectedRoute.durationMinutes} min</Descriptions.Item>
-            <Descriptions.Item label="Points">{selectedRoute.locations.length}</Descriptions.Item>
+            <Descriptions.Item label="Автор">{selectedRoute.authorName}</Descriptions.Item>
+            <Descriptions.Item label="Дистанция">{selectedRoute.distance.toFixed(1)} км</Descriptions.Item>
+            <Descriptions.Item label="Время">{selectedRoute.durationMinutes} мин</Descriptions.Item>
+            <Descriptions.Item label="Точки">{selectedRoute.locations.length}</Descriptions.Item>
           </Descriptions>
         </Card>
 
-        <Card title="Route map">
+        <Card title="Карта маршрута">
           <div className="details-map">
-            <MapContainer center={[55.751244, 37.618423]} zoom={11} style={{ width: "100%", height: "100%" }}>
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {positions.length >= 2 && (
-                <>
-                  <RouteBounds positions={positions} />
-                  <Polyline positions={positions} pathOptions={{ color: "#1677ff", weight: 5 }} />
-                </>
-              )}
-            </MapContainer>
+            <RouteReadonlyMap locations={selectedRoute.locations} geometry={selectedRoute.geometry} />
           </div>
         </Card>
 
         {id && (
-          <Card title="Reviews">
+          <Card title="Отзывы">
             <RouteReviewsSection routeId={id} />
           </Card>
         )}
       </div>
     );
   } else {
-    content = <Typography.Text>Route not found</Typography.Text>;
+    content = <Typography.Text>Маршрут не найден</Typography.Text>;
   }
 
   return (
@@ -126,10 +91,10 @@ export const RouteDetailsPage = () => {
       <Content className="details-content">
         <div className="details-header">
           <Link to="/">
-            <Button icon={<ArrowLeftOutlined />}>Back</Button>
+            <Button icon={<ArrowLeftOutlined />}>Назад</Button>
           </Link>
           <Link to="/create">
-            <Button type="primary">Create route</Button>
+            <Button type="primary">Создать маршрут</Button>
           </Link>
         </div>
         {content}

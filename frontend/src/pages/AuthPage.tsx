@@ -21,7 +21,7 @@ import type { AuthResponse } from "../types/auth";
 const { Content } = Layout;
 
 const extractMessage = (error: unknown) =>
-  error instanceof ApiClientError ? error.message : "Operation failed";
+  error instanceof ApiClientError ? error.message : "Операция не выполнена";
 
 const saveAuth = (result: AuthResponse) => {
   localStorage.setItem("accessToken", result.accessToken);
@@ -37,7 +37,7 @@ export const AuthPage = () => {
   const [registrationCodeLoading, setRegistrationCodeLoading] = useState(false);
   const [resetCodeLoading, setResetCodeLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("login");
+  const [activeTab, setActiveTab] = useState<"login" | "register" | "forgot">("login");
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -58,7 +58,7 @@ export const AuthPage = () => {
     setLoginLoading(true);
     try {
       saveAuth(await authApi.login(values));
-      messageApi.success("Signed in");
+      messageApi.success("Вы вошли в аккаунт");
       navigate("/");
     } catch (error) {
       messageApi.error(extractMessage(error));
@@ -75,7 +75,7 @@ export const AuthPage = () => {
     setRegistrationCodeLoading(true);
     try {
       await authApi.sendRegistrationCode(registerForm.getValues("email").trim());
-      messageApi.success("Verification code sent");
+      messageApi.success("Код подтверждения отправлен");
     } catch (error) {
       messageApi.error(extractMessage(error));
     } finally {
@@ -92,7 +92,7 @@ export const AuthPage = () => {
         password: values.password,
         code: values.code,
       }));
-      messageApi.success("Registered");
+      messageApi.success("Регистрация завершена");
       navigate("/");
     } catch (error) {
       messageApi.error(extractMessage(error));
@@ -109,7 +109,7 @@ export const AuthPage = () => {
     setResetCodeLoading(true);
     try {
       await authApi.sendPasswordResetCode(forgotForm.getValues("email").trim());
-      messageApi.success("If the account exists, the code has been sent");
+      messageApi.success("Если аккаунт существует, код отправлен");
     } catch (error) {
       messageApi.error(extractMessage(error));
     } finally {
@@ -125,7 +125,7 @@ export const AuthPage = () => {
         code: values.code,
         newPassword: values.newPassword,
       });
-      messageApi.success("Password changed. Sign in with the new password.");
+      messageApi.success("Пароль изменен. Войдите с новым паролем.");
       setActiveTab("login");
       forgotForm.reset();
     } catch (error) {
@@ -142,105 +142,105 @@ export const AuthPage = () => {
         <div className="auth-shell">
           <div className="auth-back-row">
             <Link to="/">
-              <Button icon={<ArrowLeftOutlined />}>Home</Button>
+              <Button icon={<ArrowLeftOutlined />}>На главную</Button>
             </Link>
           </div>
 
           <Card className="auth-card">
-            <Typography.Title level={3}>Account</Typography.Title>
-            <Tabs
-              activeKey={activeTab}
-              onChange={setActiveTab}
-              items={[
-                {
-                  key: "login",
-                  label: "Sign in",
-                  children: (
-                    <AuthLoginTab
-                      form={loginForm}
-                      loading={loginLoading}
-                      onSubmit={submitLogin}
-                      onForgot={() => setActiveTab("forgot")}
-                    />
-                  ),
-                },
-                {
-                  key: "register",
-                  label: "Register",
-                  children: (
-                    <AuthRegisterTab
-                      form={registerForm}
-                      submitLoading={registerLoading}
-                      codeLoading={registrationCodeLoading}
-                      onSubmit={submitRegister}
-                      onSendCode={() => void sendRegistrationCode()}
-                    />
-                  ),
-                },
-                {
-                  key: "forgot",
-                  label: "Forgot password",
-                  children: (
-                    <Form layout="vertical" onFinish={submitResetPassword}>
-                      <Form.Item
-                        label="Email"
-                        validateStatus={forgotForm.formState.errors.email ? "error" : ""}
-                        help={forgotForm.formState.errors.email?.message}
-                      >
-                        <Controller
-                          name="email"
-                          control={forgotForm.control}
-                          render={({ field }) => <Input {...field} autoComplete="email" />}
-                        />
-                      </Form.Item>
-                      <Form.Item
-                        label="Email code"
-                        validateStatus={forgotForm.formState.errors.code ? "error" : ""}
-                        help={forgotForm.formState.errors.code?.message}
-                      >
-                        <Controller
-                          name="code"
-                          control={forgotForm.control}
-                          render={({ field }) => (
-                            <Input {...field} maxLength={6} inputMode="numeric" autoComplete="one-time-code" />
-                          )}
-                        />
-                      </Form.Item>
-                      <Form.Item
-                        label="New password"
-                        validateStatus={forgotForm.formState.errors.newPassword ? "error" : ""}
-                        help={forgotForm.formState.errors.newPassword?.message}
-                      >
-                        <Controller
-                          name="newPassword"
-                          control={forgotForm.control}
-                          render={({ field }) => <Input.Password {...field} autoComplete="new-password" />}
-                        />
-                      </Form.Item>
-                      <Form.Item
-                        label="Repeat password"
-                        validateStatus={forgotForm.formState.errors.repeatPassword ? "error" : ""}
-                        help={forgotForm.formState.errors.repeatPassword?.message}
-                      >
-                        <Controller
-                          name="repeatPassword"
-                          control={forgotForm.control}
-                          render={({ field }) => <Input.Password {...field} autoComplete="new-password" />}
-                        />
-                      </Form.Item>
-                      <Space orientation="vertical" size={8} style={{ width: "100%" }}>
-                        <Button type="primary" htmlType="submit" loading={resetLoading} block>
-                          Reset password
-                        </Button>
-                        <Button onClick={() => void sendResetCode()} loading={resetCodeLoading} block>
-                          Send code
-                        </Button>
-                      </Space>
-                    </Form>
-                  ),
-                },
-              ]}
-            />
+            <Typography.Title level={3}>Аккаунт</Typography.Title>
+            {activeTab === "forgot" ? (
+              <Form layout="vertical" onFinish={submitResetPassword}>
+                <Form.Item
+                  label="Электронная почта"
+                  validateStatus={forgotForm.formState.errors.email ? "error" : ""}
+                  help={forgotForm.formState.errors.email?.message}
+                >
+                  <Controller
+                    name="email"
+                    control={forgotForm.control}
+                    render={({ field }) => <Input {...field} autoComplete="email" />}
+                  />
+                </Form.Item>
+                <Form.Item
+                  label="Код из письма"
+                  validateStatus={forgotForm.formState.errors.code ? "error" : ""}
+                  help={forgotForm.formState.errors.code?.message}
+                >
+                  <Controller
+                    name="code"
+                    control={forgotForm.control}
+                    render={({ field }) => (
+                      <Input {...field} maxLength={6} inputMode="numeric" autoComplete="one-time-code" />
+                    )}
+                  />
+                </Form.Item>
+                <Form.Item
+                  label="Новый пароль"
+                  validateStatus={forgotForm.formState.errors.newPassword ? "error" : ""}
+                  help={forgotForm.formState.errors.newPassword?.message}
+                >
+                  <Controller
+                    name="newPassword"
+                    control={forgotForm.control}
+                    render={({ field }) => <Input.Password {...field} autoComplete="new-password" />}
+                  />
+                </Form.Item>
+                <Form.Item
+                  label="Повторите пароль"
+                  validateStatus={forgotForm.formState.errors.repeatPassword ? "error" : ""}
+                  help={forgotForm.formState.errors.repeatPassword?.message}
+                >
+                  <Controller
+                    name="repeatPassword"
+                    control={forgotForm.control}
+                    render={({ field }) => <Input.Password {...field} autoComplete="new-password" />}
+                  />
+                </Form.Item>
+                <Space orientation="vertical" size={8} style={{ width: "100%" }}>
+                  <Button type="primary" htmlType="submit" loading={resetLoading} block>
+                    Сбросить пароль
+                  </Button>
+                  <Button onClick={() => void sendResetCode()} loading={resetCodeLoading} block>
+                    Отправить код
+                  </Button>
+                  <Button type="link" onClick={() => setActiveTab("login")} block>
+                    Вернуться ко входу
+                  </Button>
+                </Space>
+              </Form>
+            ) : (
+              <Tabs
+                activeKey={activeTab}
+                onChange={(key) => setActiveTab(key as "login" | "register")}
+                items={[
+                  {
+                    key: "login",
+                    label: "Вход",
+                    children: (
+                      <AuthLoginTab
+                        form={loginForm}
+                        loading={loginLoading}
+                        onSubmit={submitLogin}
+                        onForgot={() => setActiveTab("forgot")}
+                      />
+                    ),
+                  },
+                  {
+                    key: "register",
+                    label: "Регистрация",
+                    children: (
+                      <AuthRegisterTab
+                        form={registerForm}
+                        submitLoading={registerLoading}
+                        codeLoading={registrationCodeLoading}
+                        onSubmit={submitRegister}
+                        onSendCode={() => void sendRegistrationCode()}
+                      />
+                    ),
+                  },
+                ]}
+              />
+            )}
           </Card>
         </div>
       </Content>

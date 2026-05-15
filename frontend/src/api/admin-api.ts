@@ -20,7 +20,7 @@ export const adminApi = {
   async getRoutes(params?: {
     page?: number;
     limit?: number;
-    status?: "DRAFT" | "PENDING" | "PUBLISHED" | string;
+    status?: "PENDING" | "PUBLISHED" | string;
   }) {
     const response = await apiClient.get<PaginatedRoutesResponse>("/admin/routes", {
       params: {

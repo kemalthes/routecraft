@@ -12,13 +12,9 @@ public interface AuthVerificationCodeRepository extends JpaRepository<AuthVerifi
 
     @Query("""
         from AuthVerificationCode
-            where purpose = :purpose and consumedAt is null and email = :email
-            order by createdAt desc
-            limit 1
-
+        where purpose = :purpose and consumedAt is null and email = :email
+        order by createdAt desc
+        limit 1
     """)
-    Optional<AuthVerificationCode> findFirstCodeByParams(
-            String email,
-            VerificationPurpose purpose
-    );
+    Optional<AuthVerificationCode> findFirstCodeByParams(String email, VerificationPurpose purpose);
 }

@@ -12,7 +12,7 @@ interface AuthLoginTabProps {
 export const AuthLoginTab = ({ form, loading, onSubmit, onForgot }: AuthLoginTabProps) => (
   <Form layout="vertical" onFinish={onSubmit}>
     <Form.Item
-      label="Email"
+      label="Электронная почта"
       validateStatus={form.formState.errors.email ? "error" : ""}
       help={form.formState.errors.email?.message}
     >
@@ -23,7 +23,7 @@ export const AuthLoginTab = ({ form, loading, onSubmit, onForgot }: AuthLoginTab
       />
     </Form.Item>
     <Form.Item
-      label="Password"
+      label="Пароль"
       validateStatus={form.formState.errors.password ? "error" : ""}
       help={form.formState.errors.password?.message}
     >
@@ -34,10 +34,10 @@ export const AuthLoginTab = ({ form, loading, onSubmit, onForgot }: AuthLoginTab
       />
     </Form.Item>
     <Button type="primary" htmlType="submit" loading={loading} block>
-      Sign in
+      Войти
     </Button>
     <Button type="link" onClick={onForgot} block>
-      Forgot password?
+      Забыли пароль?
     </Button>
   </Form>
 );

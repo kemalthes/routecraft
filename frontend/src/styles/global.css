@@ -30,13 +30,31 @@ body {
   align-items: center;
   justify-content: space-between;
   height: auto;
-  padding: 14px 20px;
+  gap: 20px;
+  padding: 12px 20px;
   background: #ffffff;
   border-bottom: 1px solid #f0f0f0;
 }
 
+.app-header-main {
+  min-width: 220px;
+}
+
 .brand-title {
   margin: 0 !important;
+}
+
+.brand-subtitle {
+  display: block;
+  line-height: 1.2;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex: 1;
 }
 
 .home-sider {
@@ -170,8 +188,90 @@ body {
   background: #f5f5f5;
 }
 
+.route-edit-layout {
+  display: grid;
+  grid-template-columns: minmax(420px, 1.25fr) minmax(320px, 0.75fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.route-edit-map-panel {
+  display: grid;
+  grid-template-rows: minmax(320px, 1fr) auto;
+  gap: 12px;
+  min-width: 0;
+}
+
+.route-edit-map {
+  width: 100%;
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  background: #f5f5f5;
+}
+
+.route-edit-preview {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.route-edit-image {
+  width: 100%;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #f5f5f5;
+}
+
+.route-edit-summary {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.route-edit-summary .ant-typography {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.route-edit-form-panel {
+  min-width: 0;
+  padding: 4px 0;
+}
+
+.route-edit-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.route-edit-actions {
+  padding-top: 4px;
+}
+
 .auth-card {
   width: 100%;
+}
+
+.account-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(420px, 1.1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.account-loader {
+  min-height: 120px;
 }
 
 .review-form {
@@ -196,9 +296,26 @@ body {
     gap: 12px;
   }
 
+  .header-actions {
+    width: 100%;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+  }
+
   .admin-grid,
-  .route-manage-grid {
+  .account-grid,
+  .route-manage-grid,
+  .route-edit-layout {
     grid-template-columns: 1fr;
+  }
+
+  .route-edit-map-panel {
+    grid-template-rows: 260px auto;
+  }
+
+  .route-edit-map {
+    min-height: 260px;
   }
 }
 

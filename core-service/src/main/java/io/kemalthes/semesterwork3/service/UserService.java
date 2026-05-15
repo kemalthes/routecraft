@@ -5,7 +5,7 @@ import io.kemalthes.core.dto.PaginationMeta;
 import io.kemalthes.core.dto.UserResponse;
 import io.kemalthes.semesterwork3.entity.User;
 import io.kemalthes.semesterwork3.exception.AuthenticationRequiredException;
-import io.kemalthes.semesterwork3.exception.RouteAccessDeniedException;
+import io.kemalthes.semesterwork3.exception.UserAccessDeniedException;
 import io.kemalthes.semesterwork3.exception.UserNotFoundException;
 import io.kemalthes.semesterwork3.mapper.UserMapper;
 import io.kemalthes.semesterwork3.repository.UserRepository;
@@ -40,7 +40,7 @@ public class UserService {
 
     public PaginatedUserResponse getAllUsers(Integer page, Integer limit) {
         if (!currentUserService.hasAdminRole()) {
-            throw new RouteAccessDeniedException();
+            throw new UserAccessDeniedException();
         }
         int currentPage = page == null ? 1 : page;
         int itemsPerPage = limit == null ? 10 : limit;

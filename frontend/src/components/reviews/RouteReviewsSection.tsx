@@ -99,7 +99,7 @@ export const RouteReviewsSection = ({ routeId }: RouteReviewsSectionProps) => {
       messageApi.success("Комментарий добавлен");
     } catch (error) {
       if (error instanceof ApiClientError && (error.status === 401 || error.status === 403)) {
-        messageApi.warning("Sign in to add reviews.");
+        messageApi.warning("Войдите, чтобы оставлять отзывы.");
         return;
       }
       messageApi.error(error instanceof ApiClientError ? error.message : "Не удалось добавить комментарий");
@@ -112,7 +112,7 @@ export const RouteReviewsSection = ({ routeId }: RouteReviewsSectionProps) => {
       messageApi.success("Комментарий удален");
     } catch (error) {
       if (error instanceof ApiClientError && (error.status === 401 || error.status === 403)) {
-        messageApi.warning("Sign in to delete reviews.");
+        messageApi.warning("Войдите, чтобы удалять отзывы.");
         return;
       }
       messageApi.error(error instanceof ApiClientError ? error.message : "Не удалось удалить комментарий");

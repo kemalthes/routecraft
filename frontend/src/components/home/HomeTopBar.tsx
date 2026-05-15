@@ -1,5 +1,12 @@
 import { Button, Layout, Space, Typography } from "antd";
-import { RobotOutlined, SettingOutlined, UserOutlined } from "@ant-design/icons";
+import {
+  LoginOutlined,
+  LogoutOutlined,
+  PlusOutlined,
+  RobotOutlined,
+  SettingOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 
 const { Header } = Layout;
 
@@ -27,36 +34,49 @@ export const HomeTopBar = ({
   isAuthenticated,
 }: HomeTopBarProps) => (
   <Header className="app-header">
-    <Typography.Title level={4} className="brand-title">
-      RouteCraft
-    </Typography.Title>
-    <Space wrap>
-      {isAuthenticated ? (
-        <Button onClick={onLogout}>Logout</Button>
-      ) : (
-        <Button onClick={onAuth}>Sign in</Button>
-      )}
-      {isAuthenticated && (
-        <Button icon={<UserOutlined />} onClick={onMyRoutes}>
-          My routes
+    <div className="app-header-main">
+      <Typography.Title level={4} className="brand-title">
+        RouteCraft
+      </Typography.Title>
+      <Typography.Text type="secondary" className="brand-subtitle">
+        Маршруты, карты и модерация
+      </Typography.Text>
+    </div>
+    <div className="header-actions">
+      <Space wrap size={8}>
+        <Button icon={<RobotOutlined />} onClick={onOpenAiSearch}>
+          ИИ-поиск
         </Button>
-      )}
-      {isAuthenticated && (
-        <Button onClick={onSecurity}>
-          Security
+        <Button type="primary" icon={<PlusOutlined />} onClick={onCreate}>
+          Создать
         </Button>
-      )}
-      {isAdmin && (
-        <Button icon={<SettingOutlined />} onClick={onAdmin}>
-          Admin
-        </Button>
-      )}
-      <Button type="primary" onClick={onCreate}>
-        Create
-      </Button>
-      <Button icon={<RobotOutlined />} onClick={onOpenAiSearch}>
-        AI search
-      </Button>
-    </Space>
+      </Space>
+      <Space wrap size={8}>
+        {isAuthenticated && (
+          <Button icon={<UserOutlined />} onClick={onMyRoutes}>
+            Мои маршруты
+          </Button>
+        )}
+        {isAuthenticated && (
+          <Button icon={<UserOutlined />} onClick={onSecurity}>
+            Аккаунт
+          </Button>
+        )}
+        {isAdmin && (
+          <Button icon={<SettingOutlined />} onClick={onAdmin}>
+            Админка
+          </Button>
+        )}
+        {isAuthenticated ? (
+          <Button icon={<LogoutOutlined />} onClick={onLogout}>
+            Выйти
+          </Button>
+        ) : (
+          <Button icon={<LoginOutlined />} onClick={onAuth}>
+            Войти
+          </Button>
+        )}
+      </Space>
+    </div>
   </Header>
 );

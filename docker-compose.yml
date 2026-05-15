@@ -44,7 +44,7 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin
       MINIO_API_CORS_ALLOW_ORIGIN: http://localhost:5173,http://127.0.0.1:5173
       MINIO_NOTIFY_WEBHOOK_ENABLE_myapp: on
-      MINIO_NOTIFY_WEBHOOK_ENDPOINT_myapp: http://host.docker.internal:8081/webhooks/minio
+      MINIO_NOTIFY_WEBHOOK_ENDPOINT_myapp: http://host.docker.internal:8081/api/webhooks/minio
       MINIO_NOTIFY_WEBHOOK_AUTH_TOKEN_myapp: "secret_key"
     volumes:
       - minio_data:/data
@@ -60,6 +60,7 @@ services:
         sleep 2;
       done;
       mc mb myminio/routes --ignore-existing;
+      mc event remove myminio/routes arn:minio:sqs::myapp:webhook --event put || true;
       mc event add myminio/routes arn:minio:sqs::myapp:webhook --event put;
       echo 'MinIO успешно настроен!';
       exit 0;

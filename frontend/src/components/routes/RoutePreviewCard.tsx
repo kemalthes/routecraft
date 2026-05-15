@@ -38,7 +38,7 @@ export const RoutePreviewCard = ({
       <Typography.Title level={5}>{route.title}</Typography.Title>
       {onToggleFavorite && (
         <Button
-          aria-label={route.is_liked ? "Remove from favorites" : "Add to favorites"}
+          aria-label={route.is_liked ? "Убрать из избранного" : "Добавить в избранное"}
           icon={route.is_liked ? <HeartFilled /> : <HeartOutlined />}
           loading={favoriteLoading}
           shape="circle"
@@ -51,7 +51,7 @@ export const RoutePreviewCard = ({
       )}
     </div>
     <Typography.Text type="secondary">
-      {route.distance.toFixed(1)} km | {route.durationMinutes} min | {route.authorName}
+      {route.distance.toFixed(1)} км | {route.durationMinutes} мин | {route.authorName}
     </Typography.Text>
   </Card>
 );

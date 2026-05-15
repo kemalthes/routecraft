@@ -87,7 +87,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
       });
     } catch (error) {
       const message =
-        error instanceof ApiClientError ? error.message : "Failed to fetch routes";
+        error instanceof ApiClientError ? error.message : "Не удалось загрузить маршруты";
       set({ errorMessage: message });
     } finally {
       set({ routesLoading: false });
@@ -104,7 +104,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
       });
     } catch (error) {
       const message =
-        error instanceof ApiClientError ? error.message : "Failed to fetch favorites";
+        error instanceof ApiClientError ? error.message : "Не удалось загрузить избранное";
       set({ errorMessage: message });
     } finally {
       set({ routesLoading: false });
@@ -121,7 +121,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
       });
     } catch (error) {
       const message =
-        error instanceof ApiClientError ? error.message : "Failed to fetch your routes";
+        error instanceof ApiClientError ? error.message : "Не удалось загрузить ваши маршруты";
       set({ errorMessage: message });
     } finally {
       set({ routesLoading: false });
@@ -135,7 +135,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
       set({ selectedRoute: route });
     } catch (error) {
       const message =
-        error instanceof ApiClientError ? error.message : "Failed to fetch route";
+        error instanceof ApiClientError ? error.message : "Не удалось загрузить маршрут";
       set({
         selectedRoute: null,
         errorMessage: message,
@@ -155,7 +155,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
       });
     } catch (error) {
       const message =
-        error instanceof ApiClientError ? error.message : "Failed to fetch reviews";
+        error instanceof ApiClientError ? error.message : "Не удалось загрузить отзывы";
       set({ errorMessage: message });
     } finally {
       set({ reviewsLoading: false });
@@ -171,7 +171,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
       return createdReview;
     } catch (error) {
       const message =
-        error instanceof ApiClientError ? error.message : "Failed to create review";
+        error instanceof ApiClientError ? error.message : "Не удалось создать отзыв";
       set({ errorMessage: message });
       throw error;
     } finally {
@@ -188,7 +188,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
       await get().fetchReviews(routeId, { page: currentPage, limit: itemsPerPage });
     } catch (error) {
       const message =
-        error instanceof ApiClientError ? error.message : "Failed to delete review";
+        error instanceof ApiClientError ? error.message : "Не удалось удалить отзыв";
       set({ errorMessage: message });
       throw error;
     } finally {
@@ -224,7 +224,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
       }
     } catch (error) {
       const message =
-        error instanceof ApiClientError ? error.message : "Failed to update favorites";
+        error instanceof ApiClientError ? error.message : "Не удалось обновить избранное";
       set({
         routes: previousRoutes,
         favorites: previousFavorites,
@@ -246,7 +246,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
       await get().fetchMyRoutes({ page, limit });
     } catch (error) {
       const message =
-        error instanceof ApiClientError ? error.message : "Failed to update route";
+        error instanceof ApiClientError ? error.message : "Не удалось обновить маршрут";
       set({ errorMessage: message });
       throw error;
     }
@@ -261,7 +261,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
       await get().fetchMyRoutes({ page, limit });
     } catch (error) {
       const message =
-        error instanceof ApiClientError ? error.message : "Failed to delete route";
+        error instanceof ApiClientError ? error.message : "Не удалось удалить маршрут";
       set({ errorMessage: message });
       throw error;
     }
@@ -287,7 +287,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
       return routeId;
     } catch (error) {
       const message =
-        error instanceof ApiClientError ? error.message : "Failed to create route";
+        error instanceof ApiClientError ? error.message : "Не удалось создать маршрут";
       set({ errorMessage: message });
       throw error;
     } finally {

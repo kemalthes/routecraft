@@ -61,7 +61,7 @@ export const HomePage = () => {
   const handleTabChange = async (key: string) => {
     if (key === "favorites") {
       if (!isAuthenticated) {
-        messageApi.warning("Sign in to use favorites.");
+        messageApi.warning("Войдите, чтобы открыть избранное.");
         return;
       }
       setActiveTab(key);
@@ -79,13 +79,13 @@ export const HomePage = () => {
 
   const handleToggleFavorite = async (routeId: string, nextLiked: boolean) => {
     if (!isAuthenticated) {
-      messageApi.warning("Sign in to add routes to favorites.");
+      messageApi.warning("Войдите, чтобы добавлять маршруты в избранное.");
       return;
     }
     try {
       await toggleFavorite(routeId, nextLiked);
     } catch {
-      messageApi.error("Favorite update failed. Refresh the page and try again.");
+      messageApi.error("Не удалось обновить избранное. Обновите страницу и попробуйте снова.");
     }
   };
 
@@ -93,12 +93,12 @@ export const HomePage = () => {
     try {
       await authApi.logout();
     } catch {
-      // Local logout still wins when the token is already expired or revoked.
+      // Локальный выход важнее, если токен уже истек или был отозван.
     } finally {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("role");
-      messageApi.success("Logged out");
+      messageApi.success("Вы вышли из аккаунта");
       setActiveTab("routes");
       await fetchRoutes({ page: 1, limit: DEFAULT_PAGE_SIZE, search: appliedSearch || undefined });
     }
@@ -113,7 +113,7 @@ export const HomePage = () => {
         onCreate={() => navigate("/create")}
         onAdmin={() => navigate("/admin")}
         onMyRoutes={() => navigate("/my-routes")}
-        onSecurity={() => navigate("/security")}
+        onSecurity={() => navigate("/account")}
         onOpenAiSearch={() => setAiModalOpen(true)}
         isAdmin={isAdmin}
         isAuthenticated={isAuthenticated}
@@ -137,8 +137,8 @@ export const HomePage = () => {
             activeKey={activeTab}
             onChange={(key) => void handleTabChange(key)}
             items={[
-              { key: "routes", label: "Routes" },
-              { key: "favorites", label: "Favorites" },
+              { key: "routes", label: "Маршруты" },
+              { key: "favorites", label: "Избранное" },
             ]}
           />
 

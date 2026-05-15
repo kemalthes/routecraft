@@ -19,7 +19,7 @@ export const AuthRegisterTab = ({
 }: AuthRegisterTabProps) => (
   <Form layout="vertical" onFinish={onSubmit}>
     <Form.Item
-      label="Username"
+      label="Имя пользователя"
       validateStatus={form.formState.errors.username ? "error" : ""}
       help={form.formState.errors.username?.message}
     >
@@ -30,7 +30,7 @@ export const AuthRegisterTab = ({
       />
     </Form.Item>
     <Form.Item
-      label="Email"
+      label="Электронная почта"
       validateStatus={form.formState.errors.email ? "error" : ""}
       help={form.formState.errors.email?.message}
     >
@@ -41,7 +41,7 @@ export const AuthRegisterTab = ({
       />
     </Form.Item>
     <Form.Item
-      label="Password"
+      label="Пароль"
       validateStatus={form.formState.errors.password ? "error" : ""}
       help={form.formState.errors.password?.message}
     >
@@ -52,7 +52,7 @@ export const AuthRegisterTab = ({
       />
     </Form.Item>
     <Form.Item
-      label="Repeat password"
+      label="Повторите пароль"
       validateStatus={form.formState.errors.repeatPassword ? "error" : ""}
       help={form.formState.errors.repeatPassword?.message}
     >
@@ -63,7 +63,7 @@ export const AuthRegisterTab = ({
       />
     </Form.Item>
     <Form.Item
-      label="Email code"
+      label="Код из письма"
       validateStatus={form.formState.errors.code ? "error" : ""}
       help={form.formState.errors.code?.message}
     >
@@ -82,10 +82,10 @@ export const AuthRegisterTab = ({
         disabled={!form.watch("code")?.trim()}
         block
       >
-        Register
+        Зарегистрироваться
       </Button>
       <Button onClick={onSendCode} loading={codeLoading} block>
-        Send code
+        Отправить код
       </Button>
     </Space>
   </Form>

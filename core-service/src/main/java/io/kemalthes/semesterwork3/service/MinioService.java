@@ -49,6 +49,9 @@ public class MinioService {
     }
 
     public String generateObjectName(String fileName) {
-        return "previews/%s-%s.jpg".formatted(fileName, UUID.randomUUID());
+        String safeFileName = fileName == null || fileName.isBlank()
+                ? "route-preview"
+                : fileName.trim().replaceAll("[^a-zA-Z0-9._-]", "-");
+        return "previews/%s-%s.jpg".formatted(safeFileName, UUID.randomUUID());
     }
 }

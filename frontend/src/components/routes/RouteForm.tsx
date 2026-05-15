@@ -87,14 +87,14 @@ export const RouteForm = ({ onCreated }: RouteFormProps) => {
 
     try {
       const routeId = await createRoute(values, selectedFile);
-      messageApi.success("Маршрут создан. Изображение загружено в MinIO.");
+      messageApi.success("Маршрут создан. Изображение загружено.");
       reset();
       setSelectedFile(null);
       await onCreated?.(routeId);
     } catch (error) {
       if (error instanceof ApiClientError) {
         if (error.status === 401 || error.status === 403) {
-          messageApi.warning("Sign in to create routes.");
+          messageApi.warning("Войдите, чтобы создавать маршруты.");
           return;
         }
 
@@ -126,7 +126,7 @@ export const RouteForm = ({ onCreated }: RouteFormProps) => {
       {contextHolder}
       <Space orientation="vertical" size={16} style={{ width: "100%" }}>
         <Typography.Title level={5} style={{ margin: 0 }}>
-          Создание маршрута
+          Данные маршрута
         </Typography.Title>
 
         <Form layout="vertical" onFinish={onSubmit} requiredMark={false}>
@@ -146,7 +146,7 @@ export const RouteForm = ({ onCreated }: RouteFormProps) => {
             <Controller
               name="description"
               control={control}
-              render={({ field }) => <Input.TextArea {...field} rows={4} placeholder="Описание" />}
+              render={({ field }) => <Input.TextArea {...field} rows={4} placeholder="Описание маршрута" />}
             />
           </Form.Item>
 
@@ -168,7 +168,7 @@ export const RouteForm = ({ onCreated }: RouteFormProps) => {
               <p className="ant-upload-drag-icon">
                 <InboxOutlined />
               </p>
-              <p className="ant-upload-text">Кликните или перетащите файл</p>
+              <p className="ant-upload-text">Нажмите или перетащите файл</p>
             </Upload.Dragger>
           </Form.Item>
 

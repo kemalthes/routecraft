@@ -72,6 +72,7 @@ export interface PaginatedReviewsResponse {
 export interface CreateRouteRequest {
   title: string;
   description?: string;
+  imageUrl?: string;
   locations: RouteLocationDto[];
 }
 

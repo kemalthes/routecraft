@@ -51,14 +51,6 @@ public class AdminController {
     @PutMapping("/routes")
     public UUID approveRoute(@Valid @RequestBody UpdateRouteRequest updateRouteRequest) {
         return routeService.confirmRoute(updateRouteRequest);
-        // TODO Разделение на микросервисы
-        // TODO api gateway с X-header
-        // TODO фильтр по хэдерам
-        // TODO фронт с этой логикой
-
-        // TODO кэширование
-        // TODO spring ai
-        // TODO nginx и деплой
     }
 
     @DeleteMapping("/routes")

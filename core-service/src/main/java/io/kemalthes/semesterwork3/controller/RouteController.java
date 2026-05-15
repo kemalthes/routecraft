@@ -50,6 +50,11 @@ public class RouteController {
         return routeService.getMyRoutes(page, limit);
     }
 
+    @GetMapping("/my/{id}")
+    public RouteFullResponse getMyRouteById(@PathVariable UUID id) {
+        return routeService.getOwnUnpublishedRouteById(id);
+    }
+
     @GetMapping("/{id}")
     public RouteFullResponse getRouteById(@PathVariable UUID id) {
         return routeService.getRouteById(id);
