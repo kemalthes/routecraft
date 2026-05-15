@@ -13,4 +13,14 @@ spring:
     enabled: true
 
 server:
-  port: ${SERVER_PORT:8081}
+  port: 8081
+
+auth:
+  jwt:
+    secret: ${AUTH_JWT_SECRET:dev-only-change-this-secret-to-at-least-32-characters}
+    access-token-ttl: ${AUTH_ACCESS_TOKEN_TTL:15m}
+    refresh-token-ttl: ${AUTH_REFRESH_TOKEN_TTL:30d}
+  verification:
+    code-ttl: ${AUTH_CODE_TTL:10m}
+  mail:
+    from: ${AUTH_MAIL_FROM:noreply@routecraft.local}

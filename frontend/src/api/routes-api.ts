@@ -82,6 +82,7 @@ export const routesApi = {
     const payload: CreateRouteRequest = {
       title: data.form.title.trim(),
       description: data.form.description.trim() || undefined,
+      imageUrl: data.file?.name,
       locations: mapFormLocationsToDto(data.form.locations),
     };
 

@@ -12,4 +12,4 @@ databaseChangeLog:
   - include:
       file: db/changelog/20260507-add-route-version.sql
   - include:
-      file: db/changelog/20260506-seed-test-data.sql
+      file: db/changelog/20260511-auth-sessions.sql

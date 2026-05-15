@@ -5,6 +5,7 @@ import { CreateRoutePage } from "./pages/CreateRoutePage";
 import { HomePage } from "./pages/HomePage";
 import { MyRoutesPage } from "./pages/MyRoutesPage";
 import { RouteDetailsPage } from "./pages/RouteDetailsPage";
+import { SecurityPage } from "./pages/SecurityPage";
 
 export const router = createBrowserRouter([
   {
@@ -30,5 +31,9 @@ export const router = createBrowserRouter([
   {
     path: "/auth",
     element: <AuthPage />,
+  },
+  {
+    path: "/security",
+    element: <SecurityPage />,
   },
 ]);

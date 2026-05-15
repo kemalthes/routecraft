@@ -20,6 +20,24 @@ spring:
       port: 16379
       password: redis
 
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        debug: true
+        smtp:
+          auth: true
+          connectionTimeout: 5000
+          timeout: 5000
+          writeTimeout: 5000
+          ssl:
+            enable: true
+          starttls:
+            enable: false
+
 minio:
   endpoint: http://localhost:9000
   accessKey: minio

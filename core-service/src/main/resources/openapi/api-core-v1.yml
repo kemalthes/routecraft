@@ -23,6 +23,26 @@ tags:
     description: Панель администратора
 
 paths:
+  /auth/registration-code:
+    post:
+      tags:
+        - auth
+      summary: Send registration verification code
+      operationId: sendRegistrationCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCodeRequest'
+      responses:
+        '204':
+          description: Verification code sent
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
   /auth/register:
     post:
       tags:
@@ -80,12 +100,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - refreshToken
-              properties:
-                refreshToken:
-                  type: string
+              $ref: '#/components/schemas/RefreshTokenRequest'
       responses:
         '200':
           description: Новая пара токенов
@@ -102,9 +117,71 @@ paths:
         - auth
       summary: Выход из системы
       operationId: logout
+      security:
+        - bearerAuth: []
       responses:
         '204':
           description: Успешный выход
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/change-password:
+    post:
+      tags:
+        - auth
+      summary: Change current user password
+      operationId: changePassword
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '204':
+          description: Password changed and current session revoked
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/password-reset-code:
+    post:
+      tags:
+        - auth
+      summary: Send password reset verification code
+      operationId: sendPasswordResetCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCodeRequest'
+      responses:
+        '204':
+          description: Password reset code sent when account exists
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /auth/reset-password:
+    post:
+      tags:
+        - auth
+      summary: Reset password by email verification code
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '204':
+          description: Password reset
+        '400':
+          $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
@@ -636,7 +713,7 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: UUID
+      bearerFormat: JWT
 
   responses:
     BadRequestError:
@@ -768,6 +845,7 @@ components:
         - username
         - email
         - password
+        - code
       properties:
         username:
           type: string
@@ -782,6 +860,11 @@ components:
           type: string
           minLength: 8
           maxLength: 64
+        code:
+          type: string
+          minLength: 6
+          maxLength: 6
+          pattern: "^[0-9]{6}$"
 
     LoginRequest:
       type: object
@@ -795,8 +878,66 @@ components:
         password:
           type: string
 
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          minLength: 32
+
+    AuthCodeRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 100
+
+    ChangePasswordRequest:
+      type: object
+      required:
+        - currentPassword
+        - newPassword
+      properties:
+        currentPassword:
+          type: string
+          minLength: 1
+        newPassword:
+          type: string
+          minLength: 8
+          maxLength: 64
+
+    ResetPasswordRequest:
+      type: object
+      required:
+        - email
+        - code
+        - newPassword
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 100
+        code:
+          type: string
+          minLength: 6
+          maxLength: 6
+          pattern: "^[0-9]{6}$"
+        newPassword:
+          type: string
+          minLength: 8
+          maxLength: 64
+
     AuthResponse:
       type: object
+      required:
+        - accessToken
+        - refreshToken
+        - role
       properties:
         accessToken:
           type: string

@@ -6,6 +6,7 @@ import { HomeTopBar } from "../components/home/HomeTopBar";
 import { HomeInfoSider } from "../components/home/HomeInfoSider";
 import { HomeRoutesSection } from "../components/home/HomeRoutesSection";
 import { HomeAiSearchModal } from "../components/home/HomeAiSearchModal";
+import { authApi } from "../api/auth-api";
 
 const { Content, Footer } = Layout;
 const DEFAULT_PAGE_SIZE = 12;
@@ -88,14 +89,31 @@ export const HomePage = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Local logout still wins when the token is already expired or revoked.
+    } finally {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("role");
+      messageApi.success("Logged out");
+      setActiveTab("routes");
+      await fetchRoutes({ page: 1, limit: DEFAULT_PAGE_SIZE, search: appliedSearch || undefined });
+    }
+  };
+
   return (
     <Layout className="app-layout">
       {contextHolder}
       <HomeTopBar
         onAuth={() => navigate("/auth")}
+        onLogout={() => void handleLogout()}
         onCreate={() => navigate("/create")}
         onAdmin={() => navigate("/admin")}
         onMyRoutes={() => navigate("/my-routes")}
+        onSecurity={() => navigate("/security")}
         onOpenAiSearch={() => setAiModalOpen(true)}
         isAdmin={isAdmin}
         isAuthenticated={isAuthenticated}

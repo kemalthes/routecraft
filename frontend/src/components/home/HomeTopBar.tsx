@@ -5,9 +5,11 @@ const { Header } = Layout;
 
 interface HomeTopBarProps {
   onAuth: () => void;
+  onLogout: () => void;
   onCreate: () => void;
   onAdmin?: () => void;
   onMyRoutes?: () => void;
+  onSecurity?: () => void;
   onOpenAiSearch: () => void;
   isAdmin?: boolean;
   isAuthenticated?: boolean;
@@ -15,9 +17,11 @@ interface HomeTopBarProps {
 
 export const HomeTopBar = ({
   onAuth,
+  onLogout,
   onCreate,
   onAdmin,
   onMyRoutes,
+  onSecurity,
   onOpenAiSearch,
   isAdmin,
   isAuthenticated,
@@ -27,10 +31,19 @@ export const HomeTopBar = ({
       RouteCraft
     </Typography.Title>
     <Space wrap>
-      <Button onClick={onAuth}>Sign in</Button>
+      {isAuthenticated ? (
+        <Button onClick={onLogout}>Logout</Button>
+      ) : (
+        <Button onClick={onAuth}>Sign in</Button>
+      )}
       {isAuthenticated && (
         <Button icon={<UserOutlined />} onClick={onMyRoutes}>
           My routes
+        </Button>
+      )}
+      {isAuthenticated && (
+        <Button onClick={onSecurity}>
+          Security
         </Button>
       )}
       {isAdmin && (

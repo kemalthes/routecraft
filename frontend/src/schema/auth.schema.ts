@@ -1,25 +1,51 @@
 import { z } from "zod";
 
 export const loginSchema = z.object({
-  email: z.email("Введите корректный email"),
-  password: z.string().min(1, "Введите пароль"),
+  email: z.email("Enter a valid email"),
+  password: z.string().min(1, "Enter password"),
 });
 
 export const registerSchema = z
   .object({
     username: z
       .string()
-      .min(3, "Минимум 3 символа")
-      .max(30, "Максимум 30 символов")
-      .regex(/^\w+$/, "Разрешены латиница, цифры и _"),
-    email: z.email("Введите корректный email"),
-    password: z.string().min(8, "Минимум 8 символов").max(64, "Максимум 64 символа"),
-    repeatPassword: z.string().min(1, "Повторите пароль"),
+      .min(3, "Minimum 3 characters")
+      .max(30, "Maximum 30 characters")
+      .regex(/^\w+$/, "Use latin letters, digits and _"),
+    email: z.email("Enter a valid email"),
+    password: z.string().min(8, "Minimum 8 characters").max(64, "Maximum 64 characters"),
+    repeatPassword: z.string().min(1, "Repeat password"),
+    code: z.string().regex(/^\d{6}$/, "Enter the 6-digit code"),
   })
   .refine((data) => data.password === data.repeatPassword, {
-    message: "Пароли не совпадают",
+    message: "Passwords do not match",
+    path: ["repeatPassword"],
+  });
+
+export const forgotPasswordSchema = z
+  .object({
+    email: z.email("Enter a valid email"),
+    code: z.string().regex(/^\d{6}$/, "Enter the 6-digit code"),
+    newPassword: z.string().min(8, "Minimum 8 characters").max(64, "Maximum 64 characters"),
+    repeatPassword: z.string().min(1, "Repeat password"),
+  })
+  .refine((data) => data.newPassword === data.repeatPassword, {
+    message: "Passwords do not match",
+    path: ["repeatPassword"],
+  });
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Enter current password"),
+    newPassword: z.string().min(8, "Minimum 8 characters").max(64, "Maximum 64 characters"),
+    repeatPassword: z.string().min(1, "Repeat password"),
+  })
+  .refine((data) => data.newPassword === data.repeatPassword, {
+    message: "Passwords do not match",
     path: ["repeatPassword"],
   });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
+export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
+export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;

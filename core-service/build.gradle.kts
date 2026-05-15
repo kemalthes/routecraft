@@ -31,11 +31,13 @@ val openapiVersion = "2.6.0"
 val jacksonNullableVersion = "0.2.6"
 val mapstructVersion = "1.5.5.Final"
 val minioVersion = "9.0.0"
+val jjwtVersion = "0.13.0"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-amqp")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.security:spring-security-core")
     implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -45,8 +47,11 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$openapiVersion")
     implementation("org.openapitools:jackson-databind-nullable:${jacksonNullableVersion}")
     implementation("io.minio:minio:${minioVersion}")
+    implementation("io.jsonwebtoken:jjwt-api:$jjwtVersion")
     compileOnly("org.projectlombok:lombok")
     runtimeOnly("org.postgresql:postgresql")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:$jjwtVersion")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jjwtVersion")
     annotationProcessor("org.projectlombok:lombok")
     annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
     testImplementation("org.springframework.boot:spring-boot-starter-test")

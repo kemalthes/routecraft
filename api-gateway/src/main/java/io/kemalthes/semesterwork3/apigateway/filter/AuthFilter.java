@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
 
+import java.net.InetSocketAddress;
 import java.time.Duration;
 
 @Component
@@ -31,26 +32,32 @@ public class AuthFilter extends AbstractGatewayFilterFactory<AuthFilterConfig> {
     @Override
     public GatewayFilter apply(AuthFilterConfig config) {
         return (exchange, chain) -> {
-            if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
-                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-                return exchange.getResponse().setComplete();
+            ServerWebExchange sanitizedExchange = stripUserHeaders(exchange);
+            if (!sanitizedExchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
+                if (!config.isRequired()) {
+                    return chain.filter(sanitizedExchange);
+                }
+                sanitizedExchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                return sanitizedExchange.getResponse().setComplete();
             }
-            String authHeader = exchange.getRequest()
+            String authHeader = sanitizedExchange.getRequest()
                     .getHeaders()
                     .getFirst(HttpHeaders.AUTHORIZATION);
+            String clientIp = resolveClientIp(sanitizedExchange.getRequest());
             return webClient.get()
                     .uri(validateUri)
                     .header(HttpHeaders.AUTHORIZATION, authHeader)
+                    .header("X-Forwarded-For", clientIp)
                     .retrieve()
                     .bodyToMono(AuthResponse.class)
                     .timeout(Duration.ofSeconds(3))
                     .flatMap(authResponse -> {
-                        ServerHttpRequest request = exchange.getRequest()
+                        ServerHttpRequest request = sanitizedExchange.getRequest()
                                 .mutate()
                                 .header("X-User-Id", String.valueOf(authResponse.userId()))
                                 .header("X-User-Role", authResponse.role())
                                 .build();
-                        ServerWebExchange newExchange = exchange.mutate()
+                        ServerWebExchange newExchange = sanitizedExchange.mutate()
                                 .request(request)
                                 .build();
                         return chain.filter(newExchange);
@@ -60,5 +67,30 @@ public class AuthFilter extends AbstractGatewayFilterFactory<AuthFilterConfig> {
                         return exchange.getResponse().setComplete();
                     });
         };
+    }
+
+    private ServerWebExchange stripUserHeaders(ServerWebExchange exchange) {
+        ServerHttpRequest request = exchange.getRequest()
+                .mutate()
+                .headers(headers -> {
+                    headers.remove("X-User-Id");
+                    headers.remove("X-User-Role");
+                })
+                .build();
+        return exchange.mutate()
+                .request(request)
+                .build();
+    }
+
+    private String resolveClientIp(ServerHttpRequest request) {
+        String forwardedFor = request.getHeaders().getFirst("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+        InetSocketAddress remoteAddress = request.getRemoteAddress();
+        if (remoteAddress == null || remoteAddress.getAddress() == null) {
+            return "unknown";
+        }
+        return remoteAddress.getAddress().getHostAddress();
     }
 }

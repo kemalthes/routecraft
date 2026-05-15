@@ -5,15 +5,17 @@ import type { RegisterFormValues } from "../../schema/auth.schema";
 interface AuthRegisterTabProps {
   form: UseFormReturn<RegisterFormValues>;
   submitLoading: boolean;
+  codeLoading: boolean;
   onSubmit: () => void;
-  onResend: () => void;
+  onSendCode: () => void;
 }
 
 export const AuthRegisterTab = ({
   form,
   submitLoading,
+  codeLoading,
   onSubmit,
-  onResend,
+  onSendCode,
 }: AuthRegisterTabProps) => (
   <Form layout="vertical" onFinish={onSubmit}>
     <Form.Item
@@ -39,7 +41,7 @@ export const AuthRegisterTab = ({
       />
     </Form.Item>
     <Form.Item
-      label="Пароль"
+      label="Password"
       validateStatus={form.formState.errors.password ? "error" : ""}
       help={form.formState.errors.password?.message}
     >
@@ -50,7 +52,7 @@ export const AuthRegisterTab = ({
       />
     </Form.Item>
     <Form.Item
-      label="Повтор пароля"
+      label="Repeat password"
       validateStatus={form.formState.errors.repeatPassword ? "error" : ""}
       help={form.formState.errors.repeatPassword?.message}
     >
@@ -60,13 +62,30 @@ export const AuthRegisterTab = ({
         render={({ field }) => <Input.Password {...field} autoComplete="new-password" />}
       />
     </Form.Item>
+    <Form.Item
+      label="Email code"
+      validateStatus={form.formState.errors.code ? "error" : ""}
+      help={form.formState.errors.code?.message}
+    >
+      <Controller
+        name="code"
+        control={form.control}
+        render={({ field }) => <Input {...field} maxLength={6} inputMode="numeric" autoComplete="one-time-code" />}
+      />
+    </Form.Item>
 
     <Space orientation="vertical" size={8} style={{ width: "100%" }}>
-      <Button type="primary" htmlType="submit" loading={submitLoading} block>
-        Зарегистрироваться
+      <Button
+        type="primary"
+        htmlType="submit"
+        loading={submitLoading}
+        disabled={!form.watch("code")?.trim()}
+        block
+      >
+        Register
       </Button>
-      <Button onClick={onResend} block>
-        Переотправить письмо подтверждения
+      <Button onClick={onSendCode} loading={codeLoading} block>
+        Send code
       </Button>
     </Space>
   </Form>

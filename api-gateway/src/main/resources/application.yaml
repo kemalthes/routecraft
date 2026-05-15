@@ -12,8 +12,7 @@ spring:
   cloud:
     gateway:
       default-filters:
-        - RemoveRequestHeader=X-User-Id
-        - RemoveRequestHeader=X-User-Role
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials RETAIN_FIRST
       globalcors:
         cors-configurations:
           '[/**]':
@@ -59,6 +58,24 @@ spring:
                 redis-rate-limiter.replenishRate: 2
                 redis-rate-limiter.burstCapacity: 5
                 key-resolver: "#{@ipKeyResolver}"
+        - id: core-service-private-my-routes
+          order: -10
+          uri: ${CORE_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/routes/my
+            - Method=GET
+          filters:
+            - AuthFilter
+        - id: core-service-public-routes
+          order: 0
+          uri: ${CORE_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/routes,/api/routes/{id},/api/routes/{routeId}/reviews
+            - Method=GET
+          filters:
+            - name: AuthFilter
+              args:
+                required: false
         - id: core-service-private
           uri: ${CORE_SERVICE_URL:http://localhost:8081}
           predicates:
