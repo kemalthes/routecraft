@@ -1,11 +1,13 @@
 package io.kemalthes.semesterwork3.service;
 
+import io.kemalthes.semesterwork3.config.CacheNames;
 import io.kemalthes.semesterwork3.config.props.MinioProperties;
 import io.kemalthes.semesterwork3.exception.InternalMinioException;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.Http;
 import io.minio.MinioClient;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -33,6 +35,7 @@ public class MinioService {
         }
     }
 
+    @Cacheable(cacheNames = CacheNames.MINIO_GET_PRESIGNED_URLS, key = "#objectName")
     public String getPresignedUrl(String objectName) {
         try {
             return minioClient.getPresignedObjectUrl(

@@ -34,7 +34,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -98,11 +100,13 @@ public class RouteService {
                 .totalPages(pageResult.getTotalPages())
                 .currentPage(currentPage)
                 .itemsPerPage(itemsPerPage);
+        List<TourRoute> routes = pageResult.getContent();
+        Set<UUID> likedRouteIds = findLikedRouteIdsForCurrentUser(routes);
         return new PaginatedRoutesResponse()
-                .items(pageResult.getContent().stream()
+                .items(routes.stream()
                         .map(route -> {
                             String presignedUrl = minioService.getPresignedUrl(route.getImageUrl());
-                            return routeMapper.toRoutePreviewResponse(route, presignedUrl, isRouteLikedByCurrentUser(route.getId()));
+                            return routeMapper.toRoutePreviewResponse(route, presignedUrl, likedRouteIds.contains(route.getId()));
                         })
                         .toList())
                 .meta(meta);
@@ -128,14 +132,16 @@ public class RouteService {
                 .totalPages(pageResult.getTotalPages())
                 .currentPage(currentPage)
                 .itemsPerPage(itemsPerPage);
+        List<TourRoute> routes = pageResult.getContent();
+        Set<UUID> likedRouteIds = findLikedRouteIdsForCurrentUser(routes);
         return new PaginatedRoutesResponse()
-                .items(pageResult.getContent().stream()
+                .items(routes.stream()
                         .map(route -> {
                             String presignedUrl = minioService.getPresignedUrl(route.getImageUrl());
                             return routeMapper.toRoutePreviewResponse(
                                     route,
                                     presignedUrl,
-                                    isRouteLikedByCurrentUser(route.getId())
+                                    likedRouteIds.contains(route.getId())
                             );
                         })
                         .toList())
@@ -161,14 +167,16 @@ public class RouteService {
                 .totalPages(pageResult.getTotalPages())
                 .currentPage(currentPage)
                 .itemsPerPage(itemsPerPage);
+        List<TourRoute> routes = pageResult.getContent();
+        Set<UUID> likedRouteIds = findLikedRouteIdsForCurrentUser(routes);
         return new PaginatedRoutesResponse()
-                .items(pageResult.getContent().stream()
+                .items(routes.stream()
                         .map(route -> {
                             String presignedUrl = minioService.getPresignedUrl(route.getImageUrl());
                             return routeMapper.toRoutePreviewResponse(
                                     route,
                                     presignedUrl,
-                                    isRouteLikedByCurrentUser(route.getId())
+                                    likedRouteIds.contains(route.getId())
                             );
                         })
                         .toList())
@@ -181,7 +189,9 @@ public class RouteService {
         TourRoute route = tourRouteRepository.findByIdAndStatus(id, RouteStatus.PUBLISHED)
                 .orElseThrow(() -> new RouteNotFoundException(id));
         String presignedUrl = minioService.getPresignedUrl(route.getImageUrl());
-        return routeMapper.toRouteFullResponse(route, presignedUrl, isRouteLikedByCurrentUser(id));
+        UUID currentUserId = currentUserService.getCurrentUserId();
+        boolean isLiked = currentUserId != null && favoriteRepository.existsByUserIdAndRouteId(currentUserId, id);
+        return routeMapper.toRouteFullResponse(route, presignedUrl, isLiked);
     }
 
     @Transactional(readOnly = true)
@@ -292,9 +302,15 @@ public class RouteService {
         }
     }
 
-    private boolean isRouteLikedByCurrentUser(UUID routeId) {
+    private Set<UUID> findLikedRouteIdsForCurrentUser(List<TourRoute> routes) {
         UUID currentUserId = currentUserService.getCurrentUserId();
-        return currentUserId != null && favoriteRepository.existsByUserIdAndRouteId(currentUserId, routeId);
+        if (currentUserId == null || routes.isEmpty()) {
+            return Set.of();
+        }
+        List<UUID> routeIds = routes.stream()
+                .map(TourRoute::getId)
+                .toList();
+        return new HashSet<>(favoriteRepository.findLikedRouteIds(currentUserId, routeIds));
     }
 
     private User resolveAuthor(UUID authorId) {

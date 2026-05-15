@@ -1,6 +1,7 @@
 package io.kemalthes.semesterwork3.service;
 
 import io.kemalthes.core.dto.LocationDto;
+import io.kemalthes.semesterwork3.config.CacheNames;
 import io.kemalthes.semesterwork3.dto.OsrmResponse;
 import io.kemalthes.semesterwork3.dto.OsrmRoute;
 import io.kemalthes.semesterwork3.dto.OsrmRouteMetrics;
@@ -8,6 +9,7 @@ import io.kemalthes.semesterwork3.exception.BadRequestException;
 import io.kemalthes.semesterwork3.exception.OsrmServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
@@ -26,6 +28,7 @@ public class OsrmService {
     @Value("${osrm.base-url:https://router.project-osrm.org}")
     private String osrmBaseUrl;
 
+    @Cacheable(cacheNames = CacheNames.OSRM_ROUTE_METRICS, key = "@routeCacheKeyService.locations(#locations)")
     public OsrmRouteMetrics calculateRoute(List<LocationDto> locations) {
         if (locations == null || locations.size() < 2) {
             throw new BadRequestException("Route should contain at least 2 locations");
