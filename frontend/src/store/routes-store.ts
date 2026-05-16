@@ -43,6 +43,7 @@ interface RoutesState {
   selectedRouteId: string | null;
   selectedRoute: RouteFull | null;
   errorMessage: string | null;
+  reviewsErrorMessage: string | null;
   fetchRoutes: (params?: FetchRoutesParams) => Promise<void>;
   fetchFavorites: (params?: { page?: number; limit?: number }) => Promise<void>;
   fetchMyRoutes: (params?: { page?: number; limit?: number }) => Promise<void>;
@@ -56,6 +57,9 @@ interface RoutesState {
   clearSelection: () => void;
   createRoute: (form: CreateRouteFormValues, file?: File) => Promise<string>;
 }
+
+const getErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof ApiClientError ? error.message : fallback;
 
 export const useRoutesStore = create<RoutesState>()((set, get) => ({
   routes: [],
@@ -76,6 +80,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
   selectedRouteId: null,
   selectedRoute: null,
   errorMessage: null,
+  reviewsErrorMessage: null,
 
   fetchRoutes: async (params) => {
     set({ routesLoading: true, errorMessage: null });
@@ -86,9 +91,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
         pagination: response.meta ?? defaultPagination,
       });
     } catch (error) {
-      const message =
-        error instanceof ApiClientError ? error.message : "Не удалось загрузить маршруты";
-      set({ errorMessage: message });
+      set({ errorMessage: getErrorMessage(error, "Не удалось загрузить маршруты") });
     } finally {
       set({ routesLoading: false });
     }
@@ -103,9 +106,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
         favoritesPagination: response.meta ?? defaultPagination,
       });
     } catch (error) {
-      const message =
-        error instanceof ApiClientError ? error.message : "Не удалось загрузить избранное";
-      set({ errorMessage: message });
+      set({ errorMessage: getErrorMessage(error, "Не удалось загрузить избранное") });
     } finally {
       set({ routesLoading: false });
     }
@@ -120,9 +121,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
         myRoutesPagination: response.meta ?? defaultPagination,
       });
     } catch (error) {
-      const message =
-        error instanceof ApiClientError ? error.message : "Не удалось загрузить ваши маршруты";
-      set({ errorMessage: message });
+      set({ errorMessage: getErrorMessage(error, "Не удалось загрузить ваши маршруты") });
     } finally {
       set({ routesLoading: false });
     }
@@ -134,11 +133,9 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
       const route = await routesApi.getRouteById(routeId);
       set({ selectedRoute: route });
     } catch (error) {
-      const message =
-        error instanceof ApiClientError ? error.message : "Не удалось загрузить маршрут";
       set({
         selectedRoute: null,
-        errorMessage: message,
+        errorMessage: getErrorMessage(error, "Не удалось загрузить маршрут"),
       });
     } finally {
       set({ routeLoading: false });
@@ -146,33 +143,34 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
   },
 
   fetchReviews: async (routeId, params) => {
-    set({ reviewsLoading: true, errorMessage: null });
+    set({ reviewsLoading: true, reviewsErrorMessage: null });
     try {
       const response = await routesApi.getReviewsByRoute(routeId, params);
       set({
         reviews: response.items ?? [],
         reviewsPagination: response.meta ?? defaultPagination,
+        reviewsErrorMessage: null,
       });
     } catch (error) {
-      const message =
-        error instanceof ApiClientError ? error.message : "Не удалось загрузить отзывы";
-      set({ errorMessage: message });
+      set({
+        reviews: [],
+        reviewsPagination: defaultPagination,
+        reviewsErrorMessage: getErrorMessage(error, "Не удалось загрузить отзывы"),
+      });
     } finally {
       set({ reviewsLoading: false });
     }
   },
 
   createReview: async (routeId, payload) => {
-    set({ creatingReview: true, errorMessage: null });
+    set({ creatingReview: true, reviewsErrorMessage: null });
     try {
       const createdReview = await routesApi.createReview(routeId, payload);
       const itemsPerPage = get().reviewsPagination.itemsPerPage || 10;
       await get().fetchReviews(routeId, { page: 1, limit: itemsPerPage });
       return createdReview;
     } catch (error) {
-      const message =
-        error instanceof ApiClientError ? error.message : "Не удалось создать отзыв";
-      set({ errorMessage: message });
+      set({ reviewsErrorMessage: getErrorMessage(error, "Не удалось создать отзыв") });
       throw error;
     } finally {
       set({ creatingReview: false });
@@ -180,16 +178,14 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
   },
 
   deleteReview: async (routeId, reviewId) => {
-    set({ deletingReviewId: reviewId, errorMessage: null });
+    set({ deletingReviewId: reviewId, reviewsErrorMessage: null });
     try {
       await routesApi.deleteReview(routeId, reviewId);
       const currentPage = get().reviewsPagination.currentPage || 1;
       const itemsPerPage = get().reviewsPagination.itemsPerPage || 10;
       await get().fetchReviews(routeId, { page: currentPage, limit: itemsPerPage });
     } catch (error) {
-      const message =
-        error instanceof ApiClientError ? error.message : "Не удалось удалить отзыв";
-      set({ errorMessage: message });
+      set({ reviewsErrorMessage: getErrorMessage(error, "Не удалось удалить отзыв") });
       throw error;
     } finally {
       set({ deletingReviewId: null });
@@ -223,13 +219,11 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
         await favoritesApi.removeFavorite(routeId);
       }
     } catch (error) {
-      const message =
-        error instanceof ApiClientError ? error.message : "Не удалось обновить избранное";
       set({
         routes: previousRoutes,
         favorites: previousFavorites,
         selectedRoute: previousSelectedRoute,
-        errorMessage: message,
+        errorMessage: getErrorMessage(error, "Не удалось обновить избранное"),
       });
       throw error;
     } finally {
@@ -245,9 +239,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
       const limit = get().myRoutesPagination.itemsPerPage || 10;
       await get().fetchMyRoutes({ page, limit });
     } catch (error) {
-      const message =
-        error instanceof ApiClientError ? error.message : "Не удалось обновить маршрут";
-      set({ errorMessage: message });
+      set({ errorMessage: getErrorMessage(error, "Не удалось обновить маршрут") });
       throw error;
     }
   },
@@ -260,9 +252,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
       const limit = get().myRoutesPagination.itemsPerPage || 10;
       await get().fetchMyRoutes({ page, limit });
     } catch (error) {
-      const message =
-        error instanceof ApiClientError ? error.message : "Не удалось удалить маршрут";
-      set({ errorMessage: message });
+      set({ errorMessage: getErrorMessage(error, "Не удалось удалить маршрут") });
       throw error;
     }
   },
@@ -273,6 +263,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
       selectedRoute: null,
       reviews: [],
       reviewsPagination: defaultPagination,
+      reviewsErrorMessage: null,
       deletingReviewId: null,
     });
   },
@@ -286,9 +277,7 @@ export const useRoutesStore = create<RoutesState>()((set, get) => ({
       });
       return routeId;
     } catch (error) {
-      const message =
-        error instanceof ApiClientError ? error.message : "Не удалось создать маршрут";
-      set({ errorMessage: message });
+      set({ errorMessage: getErrorMessage(error, "Не удалось создать маршрут") });
       throw error;
     } finally {
       set({ creating: false });

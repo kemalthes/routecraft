@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, Form, Input, List, Pagination, Popconfirm, Rate, Spin, Typography, message } from "antd";
+import { Alert, Button, Form, Input, List, Pagination, Popconfirm, Rate, Spin, Typography, message } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import { useRoutesStore } from "../../store/routes-store";
 import { usersApi } from "../../api/users-api";
@@ -24,6 +24,7 @@ export const RouteReviewsSection = ({ routeId }: RouteReviewsSectionProps) => {
   const reviews = useRoutesStore((state) => state.reviews);
   const reviewsLoading = useRoutesStore((state) => state.reviewsLoading);
   const reviewsPagination = useRoutesStore((state) => state.reviewsPagination);
+  const reviewsErrorMessage = useRoutesStore((state) => state.reviewsErrorMessage);
   const creatingReview = useRoutesStore((state) => state.creatingReview);
   const deletingReviewId = useRoutesStore((state) => state.deletingReviewId);
   const fetchReviews = useRoutesStore((state) => state.fetchReviews);
@@ -34,6 +35,7 @@ export const RouteReviewsSection = ({ routeId }: RouteReviewsSectionProps) => {
     () => localStorage.getItem("role") as "ROLE_USER" | "ROLE_ADMIN" | null,
     [],
   );
+  const isAuthenticated = Boolean(localStorage.getItem("accessToken"));
 
   useEffect(() => {
     void fetchReviews(routeId, { page: 1, limit: REVIEWS_PAGE_SIZE });
@@ -123,31 +125,39 @@ export const RouteReviewsSection = ({ routeId }: RouteReviewsSectionProps) => {
     <div>
       {contextHolder}
 
-      <Form<ReviewFormValues>
-        form={reviewForm}
-        layout="vertical"
-        onFinish={(values) => void handleReviewSubmit(values)}
-        className="review-form"
-        initialValues={{ rating: 5, comment: "" }}
-      >
-        <Form.Item name="rating" label="Оценка" rules={[{ required: true, message: "Поставьте оценку" }]}>
-          <Rate />
-        </Form.Item>
-        <Form.Item
-          name="comment"
-          label="Комментарий"
-          rules={[
-            { required: true, message: "Введите комментарий" },
-            { min: 2, message: "Минимум 2 символа" },
-            { max: 1000, message: "Максимум 1000 символов" },
-          ]}
+      {isAuthenticated ? (
+        <Form<ReviewFormValues>
+          form={reviewForm}
+          layout="vertical"
+          onFinish={(values) => void handleReviewSubmit(values)}
+          className="review-form"
+          initialValues={{ rating: 5, comment: "" }}
         >
-          <Input.TextArea rows={3} showCount maxLength={1000} />
-        </Form.Item>
-        <Button type="primary" htmlType="submit" loading={creatingReview}>
-          Отправить
-        </Button>
-      </Form>
+          <Form.Item name="rating" label="Оценка" rules={[{ required: true, message: "Поставьте оценку" }]}>
+            <Rate />
+          </Form.Item>
+          <Form.Item
+            name="comment"
+            label="Комментарий"
+            rules={[
+              { required: true, message: "Введите комментарий" },
+              { min: 2, message: "Минимум 2 символа" },
+              { max: 1000, message: "Максимум 1000 символов" },
+            ]}
+          >
+            <Input.TextArea rows={3} showCount maxLength={1000} />
+          </Form.Item>
+          <Button type="primary" htmlType="submit" loading={creatingReview}>
+            Отправить
+          </Button>
+        </Form>
+      ) : (
+        <Alert className="review-form" type="info" showIcon message="Войдите, чтобы оставить отзыв." />
+      )}
+
+      {reviewsErrorMessage && (
+        <Alert className="review-form" type="warning" showIcon message={reviewsErrorMessage} />
+      )}
 
       {reviewsLoading ? (
         <div className="content-loader">

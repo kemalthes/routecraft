@@ -85,15 +85,14 @@ public class ReviewService {
         }
         Review review = reviewRepository.findByIdAndRouteId(reviewId, routeId)
                 .orElseThrow(() -> new ReviewNotFoundException(reviewId));
-        if (currentUserService.hasAdminRole()) {
-            return;
-        }
-        UUID currentUserId = currentUserService.getCurrentUserId();
-        boolean isOwner = currentUserId != null
-                && review.getUser() != null
-                && currentUserId.equals(review.getUser().getId());
-        if (!isOwner) {
-            throw new ReviewAccessDeniedException();
+        if (!currentUserService.hasAdminRole()) {
+            UUID currentUserId = currentUserService.getCurrentUserId();
+            boolean isOwner = currentUserId != null
+                    && review.getUser() != null
+                    && currentUserId.equals(review.getUser().getId());
+            if (!isOwner) {
+                throw new ReviewAccessDeniedException();
+            }
         }
         reviewRepository.delete(review);
     }

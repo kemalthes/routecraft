@@ -3,7 +3,6 @@ import {
   LoginOutlined,
   LogoutOutlined,
   PlusOutlined,
-  RobotOutlined,
   SettingOutlined,
   UserOutlined,
 } from "@ant-design/icons";
@@ -17,7 +16,6 @@ interface HomeTopBarProps {
   onAdmin?: () => void;
   onMyRoutes?: () => void;
   onSecurity?: () => void;
-  onOpenAiSearch: () => void;
   isAdmin?: boolean;
   isAuthenticated?: boolean;
 }
@@ -29,7 +27,6 @@ export const HomeTopBar = ({
   onAdmin,
   onMyRoutes,
   onSecurity,
-  onOpenAiSearch,
   isAdmin,
   isAuthenticated,
 }: HomeTopBarProps) => (
@@ -44,11 +41,6 @@ export const HomeTopBar = ({
     </div>
     <div className="header-actions">
       <Space wrap size={8}>
-        {isAdmin && (
-          <Button icon={<RobotOutlined />} onClick={onOpenAiSearch}>
-            ИИ-поиск
-          </Button>
-        )}
         <Button type="primary" icon={<PlusOutlined />} onClick={onCreate}>
           Создать
         </Button>

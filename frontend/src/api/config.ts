@@ -17,6 +17,14 @@ export const apiClient = axios.create({
   },
 });
 
+export const publicApiClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 15000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
 export const uploadClient = axios.create({
   timeout: 30000,
 });
@@ -57,13 +65,20 @@ apiClient.interceptors.response.use(
     if (!axios.isAxiosError(error) || error.response?.status !== 401 || !error.config) {
       return Promise.reject(error);
     }
+
     const config = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     const url = config.url ?? "";
-    const canRefresh = !config._retry && !url.includes("/auth/login") && !url.includes("/auth/register")
-      && !url.includes("/auth/refresh") && !url.includes("/auth/logout");
+    const canRefresh =
+      !config._retry &&
+      !url.includes("/auth/login") &&
+      !url.includes("/auth/register") &&
+      !url.includes("/auth/refresh") &&
+      !url.includes("/auth/logout");
+
     if (!canRefresh) {
       return Promise.reject(error);
     }
+
     try {
       config._retry = true;
       const accessToken = await refreshAccessToken();
@@ -115,6 +130,11 @@ export const toApiClientError = (error: unknown): ApiClientError => {
 };
 
 apiClient.interceptors.response.use(
+  (response) => response,
+  (error: unknown) => Promise.reject(toApiClientError(error)),
+);
+
+publicApiClient.interceptors.response.use(
   (response) => response,
   (error: unknown) => Promise.reject(toApiClientError(error)),
 );

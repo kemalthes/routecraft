@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -22,7 +24,7 @@ public class MinioService {
 
     public String putPresignedUrl(String objectName) {
         try {
-            return minioClient.getPresignedObjectUrl(
+            String url = minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .bucket(minioProperties.bucket())
                             .object(objectName)
@@ -30,6 +32,7 @@ public class MinioService {
                             .expiry(minioProperties.presignedUrlTtl(), TimeUnit.MINUTES)
                             .build()
             );
+            return toPublicMinioUrl(url);
         } catch (Exception e) {
             throw new InternalMinioException("Cannot get presigned url");
         }
@@ -38,7 +41,7 @@ public class MinioService {
     @Cacheable(cacheNames = CacheNames.MINIO_GET_PRESIGNED_URLS, key = "#objectName")
     public String getPresignedUrl(String objectName) {
         try {
-            return minioClient.getPresignedObjectUrl(
+            String url = minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .bucket(minioProperties.bucket())
                             .object(objectName)
@@ -46,6 +49,7 @@ public class MinioService {
                             .expiry(minioProperties.presignedUrlTtl(), TimeUnit.MINUTES)
                             .build()
             );
+            return toPublicMinioUrl(url);
         } catch (Exception e) {
             throw new InternalMinioException("Cannot get presigned url");
         }
@@ -56,5 +60,23 @@ public class MinioService {
                 ? "route-preview"
                 : fileName.trim().replaceAll("[^a-zA-Z0-9._-]", "-");
         return "previews/%s-%s.jpg".formatted(safeFileName, UUID.randomUUID());
+    }
+
+    private String toPublicMinioUrl(String url) throws URISyntaxException {
+        String publicEndpoint = minioProperties.publicEndpoint();
+        if (publicEndpoint == null || publicEndpoint.isBlank()) {
+            return url;
+        }
+        URI source = URI.create(url);
+        URI target = URI.create(publicEndpoint);
+        return new URI(
+                target.getScheme(),
+                target.getUserInfo(),
+                target.getHost(),
+                target.getPort(),
+                source.getPath(),
+                source.getQuery(),
+                source.getFragment()
+        ).toString();
     }
 }

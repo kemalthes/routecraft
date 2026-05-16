@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Input, Layout, Tabs, message } from "antd";
+import { Alert, Input, Layout, Tabs, message } from "antd";
 import { useRoutesStore } from "../store/routes-store";
 import { HomeTopBar } from "../components/home/HomeTopBar";
 import { HomeInfoSider } from "../components/home/HomeInfoSider";
 import { HomeRoutesSection } from "../components/home/HomeRoutesSection";
-import { HomeAiSearchModal } from "../components/home/HomeAiSearchModal";
 import { authApi } from "../api/auth-api";
 import { searchApi } from "../api/search-api";
 import type { PaginationMeta, RoutePreview } from "../types/routes";
@@ -29,7 +28,6 @@ export const HomePage = () => {
   const [searchInput, setSearchInput] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
   const [activeTab, setActiveTab] = useState("routes");
-  const [aiModalOpen, setAiModalOpen] = useState(false);
   const [aiQuery, setAiQuery] = useState("");
   const [aiRoutes, setAiRoutes] = useState<RoutePreview[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
@@ -65,23 +63,23 @@ export const HomePage = () => {
     });
   };
 
-  const runAiSearch = async () => {
+  const runAiSearch = async (query: string) => {
     if (!isAdmin) {
       messageApi.warning("ИИ-поиск доступен только администраторам.");
       return;
     }
-    const normalized = aiQuery.trim();
+
+    const normalized = query.trim();
     if (normalized.length < 2) {
       messageApi.warning("Введите запрос минимум из 2 символов.");
       return;
     }
+
     try {
       setAiLoading(true);
       setAiError(null);
       const result = await searchApi.searchRoutes({ q: normalized, limit: DEFAULT_PAGE_SIZE });
       setAiRoutes(result);
-      setActiveTab("ai");
-      setAiModalOpen(false);
     } catch (error) {
       const messageText = error instanceof Error ? error.message : "Не удалось выполнить ИИ-поиск.";
       setAiError(messageText);
@@ -160,11 +158,8 @@ export const HomePage = () => {
   };
 
   const displayedRoutes = activeTab === "favorites" ? favorites : activeTab === "ai" ? aiRoutes : routes;
-  const displayedPagination = activeTab === "favorites"
-    ? favoritesPagination
-    : activeTab === "ai"
-      ? aiPagination
-      : pagination;
+  const displayedPagination =
+    activeTab === "favorites" ? favoritesPagination : activeTab === "ai" ? aiPagination : pagination;
   const displayedLoading = activeTab === "ai" ? aiLoading : routesLoading;
   const displayedError = activeTab === "ai" ? aiError : errorMessage;
 
@@ -178,7 +173,6 @@ export const HomePage = () => {
         onAdmin={() => navigate("/admin")}
         onMyRoutes={() => navigate("/my-routes")}
         onSecurity={() => navigate("/account")}
-        onOpenAiSearch={() => setAiModalOpen(true)}
         isAdmin={isAdmin}
         isAuthenticated={isAuthenticated}
       />
@@ -186,17 +180,6 @@ export const HomePage = () => {
       <Layout>
         <HomeInfoSider />
         <Content className="home-content">
-          <div className="home-toolbar">
-            <Input.Search
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Поиск по названию или описанию"
-              allowClear
-              enterButton="Найти"
-              onSearch={() => void runSearch(searchInput)}
-            />
-          </div>
-
           <Tabs
             activeKey={activeTab}
             onChange={(key) => void handleTabChange(key)}
@@ -206,6 +189,37 @@ export const HomePage = () => {
               ...(isAdmin ? [{ key: "ai", label: "ИИ-поиск" }] : []),
             ]}
           />
+
+          <div className="home-toolbar">
+            {activeTab === "ai" ? (
+              <>
+                <Input.Search
+                  value={aiQuery}
+                  onChange={(event) => setAiQuery(event.target.value)}
+                  placeholder="Например: спокойный маршрут у воды на 2-3 часа"
+                  allowClear
+                  enterButton="Найти"
+                  loading={aiLoading}
+                  onSearch={(value) => void runAiSearch(value)}
+                />
+                <Alert
+                  className="home-toolbar-hint"
+                  type="info"
+                  showIcon
+                  message="ИИ-поиск ищет по смыслу среди опубликованных маршрутов."
+                />
+              </>
+            ) : (
+              <Input.Search
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Поиск по названию или описанию"
+                allowClear
+                enterButton="Найти"
+                onSearch={() => void runSearch(searchInput)}
+              />
+            )}
+          </div>
 
           <HomeRoutesSection
             loading={displayedLoading}
@@ -224,15 +238,6 @@ export const HomePage = () => {
       <Footer className="app-footer">
         © 2026 RouteCraft · Туристические маршруты, карта, поиск и публикация.
       </Footer>
-
-      <HomeAiSearchModal
-        open={aiModalOpen}
-        query={aiQuery}
-        loading={aiLoading}
-        onChangeQuery={setAiQuery}
-        onApply={() => void runAiSearch()}
-        onClose={() => setAiModalOpen(false)}
-      />
     </Layout>
   );
 };

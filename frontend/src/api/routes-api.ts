@@ -1,4 +1,4 @@
-import { apiClient, uploadClient } from "./config";
+import { apiClient, publicApiClient, uploadClient } from "./config";
 import type {
   CreateRouteFormValues,
   CreateRouteRequest,
@@ -54,7 +54,7 @@ export const routesApi = {
   },
 
   async getReviewsByRoute(routeId: string, params?: { page?: number; limit?: number }) {
-    const response = await apiClient.get<PaginatedReviewsResponse>(`/routes/${routeId}/reviews`, {
+    const response = await publicApiClient.get<PaginatedReviewsResponse>(`/routes/${routeId}/reviews`, {
       params: {
         page: params?.page ?? 1,
         limit: params?.limit ?? 10,

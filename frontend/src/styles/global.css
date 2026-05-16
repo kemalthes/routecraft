@@ -90,6 +90,10 @@ body {
   margin-bottom: 16px;
 }
 
+.home-toolbar-hint {
+  margin-top: 8px;
+}
+
 .route-preview-card {
   height: 100%;
   border-radius: 8px !important;
