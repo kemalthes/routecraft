@@ -4,16 +4,16 @@ spring:
       on-profile: prod
 
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
-      password: ${REDIS_PASSWORD}
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT}
+      password: ${SPRING_DATA_REDIS_PASSWORD}
 
   mail:
     host: ${MAIL_HOST}
@@ -29,17 +29,17 @@ spring:
 
 minio:
   endpoint: ${MINIO_ENDPOINT}
-  accessKey: ${MINIO_USERNAME}
-  secretKey: ${MINIO_PASSWORD}
+  public-endpoint: ${MINIO_PUBLIC_ENDPOINT}
+  access-key: ${MINIO_ACCESS_KEY}
+  secret-key: ${MINIO_SECRET_KEY}
   bucket: ${MINIO_BUCKET}
-  webhook-token: ${MINIO_WH_TOKEN}
-  presignedUrlTtl: 10
+  webhook-token: ${MINIO_WEBHOOK_TOKEN}
+  presigned-url-ttl: ${MINIO_PRESIGNED_URL_TTL}
 
-allowed-origins: ${ALLOWED_ORIGINS}
+allowed-origin-patterns: ${ALLOWED_ORIGIN_PATTERNS}
 
 auth:
   jwt:
     secret: ${AUTH_JWT_SECRET}
   mail:
-    enabled: ${AUTH_MAIL_ENABLED:true}
     from: ${AUTH_MAIL_FROM}

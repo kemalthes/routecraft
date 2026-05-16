@@ -8,9 +8,11 @@ import io.kemalthes.semesterwork3.dto.OsrmRouteMetrics;
 import io.kemalthes.semesterwork3.exception.BadRequestException;
 import io.kemalthes.semesterwork3.exception.OsrmServiceException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OsrmService {
 
     private final RestTemplate restTemplate;
@@ -43,7 +46,14 @@ public class OsrmService {
         ResponseEntity<OsrmResponse> response;
         try {
             response = restTemplate.getForEntity(requestUrl, OsrmResponse.class);
+        } catch (HttpStatusCodeException e) {
+            log.warn("OSRM request failed with status {} for URL {}. Response body: {}",
+                    e.getStatusCode().value(),
+                    requestUrl,
+                    e.getResponseBodyAsString());
+            throw new OsrmServiceException("OSRM API call failed");
         } catch (RestClientException e) {
+            log.warn("OSRM request failed for URL {}", requestUrl, e);
             throw new OsrmServiceException("OSRM API call failed");
         }
         if (!response.getStatusCode().is2xxSuccessful()) {

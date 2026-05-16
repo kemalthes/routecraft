@@ -6,17 +6,18 @@ spring:
     name: api-gateway
   data:
     redis:
-      host: ${SPRING_DATA_REDIS_HOST:localhost}
-      port: ${SPRING_DATA_REDIS_PORT:16379}
-      password: ${SPRING_DATA_REDIS_PASSWORD:redis}
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:16379}
+      password: ${REDIS_PASSWORD:redis}
   cloud:
     gateway:
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials RETAIN_FIRST
       globalcors:
+        add-to-simple-url-handler-mapping: true
         cors-configurations:
           '[/**]':
-            allowedOrigins: ${ALLOWED_ORIGINS:http://localhost:5173}
+            allowedOriginPatterns: ${ALLOWED_ORIGIN_PATTERNS:http://localhost,http://localhost:*,http://127.0.0.1,http://127.0.0.1:*}
             allowedMethods: "*"
             allowedHeaders: "*"
             allowCredentials: true

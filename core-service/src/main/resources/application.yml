@@ -68,4 +68,4 @@ minio:
 osrm:
   base-url: ${OSRM_BASE_URL:https://router.project-osrm.org}
 
-allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
+allowed-origin-patterns: ${ALLOWED_ORIGIN_PATTERNS:http://localhost,http://localhost:*,http://127.0.0.1,http://127.0.0.1:*}

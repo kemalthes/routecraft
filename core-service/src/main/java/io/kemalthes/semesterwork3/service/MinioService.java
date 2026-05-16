@@ -6,25 +6,31 @@ import io.kemalthes.semesterwork3.exception.InternalMinioException;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.Http;
 import io.minio.MinioClient;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Service
-@RequiredArgsConstructor
+@Slf4j
 public class MinioService {
 
     private final MinioClient minioClient;
     private final MinioProperties minioProperties;
 
+    public MinioService(
+            @Qualifier("presignedMinioClient") MinioClient minioClient,
+            MinioProperties minioProperties) {
+        this.minioClient = minioClient;
+        this.minioProperties = minioProperties;
+    }
+
     public String putPresignedUrl(String objectName) {
         try {
-            String url = minioClient.getPresignedObjectUrl(
+            return minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .bucket(minioProperties.bucket())
                             .object(objectName)
@@ -32,8 +38,8 @@ public class MinioService {
                             .expiry(minioProperties.presignedUrlTtl(), TimeUnit.MINUTES)
                             .build()
             );
-            return toPublicMinioUrl(url);
         } catch (Exception e) {
+            log.warn("Cannot create PUT presigned URL for object {}", objectName, e);
             throw new InternalMinioException("Cannot get presigned url");
         }
     }
@@ -41,7 +47,7 @@ public class MinioService {
     @Cacheable(cacheNames = CacheNames.MINIO_GET_PRESIGNED_URLS, key = "#objectName")
     public String getPresignedUrl(String objectName) {
         try {
-            String url = minioClient.getPresignedObjectUrl(
+            return minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .bucket(minioProperties.bucket())
                             .object(objectName)
@@ -49,8 +55,8 @@ public class MinioService {
                             .expiry(minioProperties.presignedUrlTtl(), TimeUnit.MINUTES)
                             .build()
             );
-            return toPublicMinioUrl(url);
         } catch (Exception e) {
+            log.warn("Cannot create GET presigned URL for object {}", objectName, e);
             throw new InternalMinioException("Cannot get presigned url");
         }
     }
@@ -60,23 +66,5 @@ public class MinioService {
                 ? "route-preview"
                 : fileName.trim().replaceAll("[^a-zA-Z0-9._-]", "-");
         return "previews/%s-%s.jpg".formatted(safeFileName, UUID.randomUUID());
-    }
-
-    private String toPublicMinioUrl(String url) throws URISyntaxException {
-        String publicEndpoint = minioProperties.publicEndpoint();
-        if (publicEndpoint == null || publicEndpoint.isBlank()) {
-            return url;
-        }
-        URI source = URI.create(url);
-        URI target = URI.create(publicEndpoint);
-        return new URI(
-                target.getScheme(),
-                target.getUserInfo(),
-                target.getHost(),
-                target.getPort(),
-                source.getPath(),
-                source.getQuery(),
-                source.getFragment()
-        ).toString();
     }
 }

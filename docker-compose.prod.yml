@@ -4,11 +4,9 @@ services:
     container_name: routecraft-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - 15432:5432
+      POSTGRES_DB: ${POSTGRES_DB:-routecraft_db}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -21,13 +19,11 @@ services:
     image: redis:7-alpine
     container_name: routecraft-redis
     restart: unless-stopped
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is required}"]
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep PONG"]
+      test: ["CMD-SHELL", "redis-cli -a \"${REDIS_PASSWORD}\" ping | grep PONG"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -37,8 +33,8 @@ services:
     container_name: routecraft-rabbitmq
     restart: unless-stopped
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:?RABBITMQ_USERNAME is required}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
@@ -60,15 +56,15 @@ services:
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
-      MINIO_API_CORS_ALLOW_ORIGIN: ${ALLOWED_ORIGINS:-http://localhost}
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
+      MINIO_API_CORS_ALLOW_ORIGIN: ${ALLOWED_ORIGINS:-http://193.233.201.48}
       MINIO_NOTIFY_WEBHOOK_ENABLE_routecraft: "on"
       MINIO_NOTIFY_WEBHOOK_ENDPOINT_routecraft: http://core-service:8081/api/webhooks/minio
-      MINIO_NOTIFY_WEBHOOK_AUTH_TOKEN_routecraft: ${MINIO_WEBHOOK_TOKEN:-change-me}
+      MINIO_NOTIFY_WEBHOOK_AUTH_TOKEN_routecraft: ${MINIO_WEBHOOK_TOKEN:?MINIO_WEBHOOK_TOKEN is required}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       - minio_data:/data
     healthcheck:
@@ -84,22 +80,21 @@ services:
       minio:
         condition: service_healthy
     environment:
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-      MINIO_BUCKET: routes
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
+      MINIO_BUCKET: ${MINIO_BUCKET:-routes}
     entrypoint: >
       /bin/sh -c "
       mc alias set routecraft http://minio:9000 \"$${MINIO_ACCESS_KEY}\" \"$${MINIO_SECRET_KEY}\";
-      mc mb routecraft/routes --ignore-existing;
-      mc event remove routecraft/routes arn:minio:sqs::routecraft:webhook --event put || true;
-      mc event add routecraft/routes arn:minio:sqs::routecraft:webhook --event put;
+      mc mb routecraft/\"$${MINIO_BUCKET}\" --ignore-existing;
+      mc event remove routecraft/\"$${MINIO_BUCKET}\" arn:minio:sqs::routecraft:webhook --event put || true;
+      mc event add routecraft/\"$${MINIO_BUCKET}\" arn:minio:sqs::routecraft:webhook --event put;
       echo 'MinIO bucket and webhook are ready';
       "
     restart: "no"
 
   core-service:
-    build:
-      context: ./core-service
+    image: kemalthes/routecraft-core-service:latest
     container_name: routecraft-core-service
     restart: unless-stopped
     depends_on:
@@ -116,39 +111,38 @@ services:
     environment:
       SERVER_PORT: 8081
       SPRING_PROFILES_ACTIVE: prod
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/routecraft_db
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-routecraft_db}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:?POSTGRES_USER is required}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
-      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
-      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:?RABBITMQ_USERNAME is required}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
       MINIO_ENDPOINT: http://minio:9000
-      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT}
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-      MINIO_BUCKET: routes
-      MINIO_WEBHOOK_TOKEN: ${MINIO_WEBHOOK_TOKEN}
-      MINIO_PRESIGNED_URL_TTL: 10
-      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET}
-      AUTH_ACCESS_TOKEN_TTL: 15m
-      AUTH_REFRESH_TOKEN_TTL: 30d
-      AUTH_CODE_TTL: 10m
-      AUTH_MAIL_FROM: ${AUTH_MAIL_FROM}
-      MAIL_HOST: ${MAIL_HOST}
-      MAIL_PORT: ${MAIL_PORT}
-      MAIL_USERNAME: ${MAIL_USERNAME}
-      MAIL_PASSWORD: ${MAIL_PASSWORD}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
-      ALLOWED_ORIGIN_PATTERNS: ${ALLOWED_ORIGIN_PATTERNS:-http://localhost,http://localhost:*,http://127.0.0.1,http://127.0.0.1:*}
-      OSRM_BASE_URL: ${OSRM_BASE_URL}
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://193.233.201.48:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
+      MINIO_BUCKET: ${MINIO_BUCKET:-routes}
+      MINIO_WEBHOOK_TOKEN: ${MINIO_WEBHOOK_TOKEN:?MINIO_WEBHOOK_TOKEN is required}
+      MINIO_PRESIGNED_URL_TTL: ${MINIO_PRESIGNED_URL_TTL:-10}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?AUTH_JWT_SECRET is required}
+      AUTH_ACCESS_TOKEN_TTL: ${AUTH_ACCESS_TOKEN_TTL:-15m}
+      AUTH_REFRESH_TOKEN_TTL: ${AUTH_REFRESH_TOKEN_TTL:-30d}
+      AUTH_CODE_TTL: ${AUTH_CODE_TTL:-10m}
+      AUTH_MAIL_FROM: ${AUTH_MAIL_FROM:?AUTH_MAIL_FROM is required}
+      MAIL_HOST: ${MAIL_HOST:?MAIL_HOST is required}
+      MAIL_PORT: ${MAIL_PORT:-465}
+      MAIL_USERNAME: ${MAIL_USERNAME:?MAIL_USERNAME is required}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:?MAIL_PASSWORD is required}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://193.233.201.48}
+      ALLOWED_ORIGIN_PATTERNS: ${ALLOWED_ORIGIN_PATTERNS:-http://193.233.201.48,http://193.233.201.48:*}
+      OSRM_BASE_URL: ${OSRM_BASE_URL:-https://router.project-osrm.org}
 
   search-service:
-    build:
-      context: ./search-service
+    image: kemalthes/routecraft-search-service:latest
     container_name: routecraft-search-service
     restart: unless-stopped
     depends_on:
@@ -162,26 +156,26 @@ services:
       SERVER_PORT: 8082
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
-      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:?RABBITMQ_USERNAME is required}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
       QDRANT_HOST: qdrant
       QDRANT_GRPC_PORT: 6334
       QDRANT_COLLECTION: ${QDRANT_COLLECTION:-routes}
-      QDRANT_USE_TLS: ${QDRANT_USE_TLS}
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+      QDRANT_USE_TLS: ${QDRANT_USE_TLS:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com}
       OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       OPENAI_EMBEDDING_DIMENSIONS: ${OPENAI_EMBEDDING_DIMENSIONS:-1536}
       MINIO_ENDPOINT: http://minio:9000
-      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-      MINIO_BUCKET: routes
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://193.233.201.48:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
+      MINIO_BUCKET: ${MINIO_BUCKET:-routes}
       MINIO_PRESIGNED_URL_TTL: ${MINIO_PRESIGNED_URL_TTL:-10}
 
   api-gateway:
-    build:
-      context: ./api-gateway
+    image: kemalthes/routecraft-api-gateway:latest
     container_name: routecraft-api-gateway
     restart: unless-stopped
     depends_on:
@@ -195,25 +189,22 @@ services:
       SERVER_PORT: 8080
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       CORE_SERVICE_URL: http://core-service:8081
       SEARCH_SERVICE_URL: http://search-service:8082
       CORE_SERVICE_VALIDATE_URL: http://core-service:8081/api/auth/validate
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost}
-      ALLOWED_ORIGIN_PATTERNS: ${ALLOWED_ORIGIN_PATTERNS:-http://localhost,http://localhost:*,http://127.0.0.1,http://127.0.0.1:*}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://193.233.201.48}
+      ALLOWED_ORIGIN_PATTERNS: ${ALLOWED_ORIGIN_PATTERNS:-http://193.233.201.48,http://193.233.201.48:*}
 
   frontend:
-    build:
-      context: ./frontend
-      args:
-        VITE_API_BASE_URL: /api
+    image: kemalthes/routecraft-frontend:latest
     container_name: routecraft-frontend
     restart: unless-stopped
     depends_on:
       api-gateway:
         condition: service_started
     ports:
-      - "${FRONTEND_PORT:-8080}:80"
+      - "${FRONTEND_PORT:-80}:80"
 
 volumes:
   postgres_data:

@@ -2,7 +2,7 @@ plugins {
     java
     id("org.springframework.boot") version "3.5.14"
     id("io.spring.dependency-management") version "1.1.7"
-    id("org.openapi.generator") version "7.4.0"
+    id("org.openapi.generator") version "7.6.0"
 }
 
 group = "io.kemalthes"
@@ -37,7 +37,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.ai:spring-ai-starter-model-openai")
     implementation("org.springframework.ai:spring-ai-starter-vector-store-qdrant")
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5")
     implementation("org.openapitools:jackson-databind-nullable:${jacksonNullableVersion}")
     implementation("io.minio:minio:9.0.0")
     compileOnly("org.projectlombok:lombok")
@@ -45,6 +45,14 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5")
+        force("org.springdoc:springdoc-openapi-starter-common:2.8.5")
+        force("org.springdoc:springdoc-openapi-starter-webmvc-api:2.8.5")
+    }
 }
 
 dependencyManagement {
