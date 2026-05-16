@@ -8,6 +8,7 @@ interface HomeRoutesSectionProps {
   errorMessage: string | null;
   pagination: PaginationMeta;
   togglingFavoriteId?: string | null;
+  showPagination?: boolean;
   onOpenRoute: (id: string) => void;
   onPageChange: (page: number, pageSize: number) => void;
   onToggleFavorite?: (id: string, nextLiked: boolean) => void;
@@ -19,6 +20,7 @@ export const HomeRoutesSection = ({
   errorMessage,
   pagination,
   togglingFavoriteId,
+  showPagination = true,
   onOpenRoute,
   onPageChange,
   onToggleFavorite,
@@ -57,15 +59,17 @@ export const HomeRoutesSection = ({
           </Col>
         ))}
       </Row>
-      <div className="pagination-wrap">
-        <Pagination
-          current={pagination.currentPage}
-          pageSize={pagination.itemsPerPage}
-          total={pagination.totalItems}
-          showSizeChanger
-          onChange={onPageChange}
-        />
-      </div>
+      {showPagination && (
+        <div className="pagination-wrap">
+          <Pagination
+            current={pagination.currentPage}
+            pageSize={pagination.itemsPerPage}
+            total={pagination.totalItems}
+            showSizeChanger
+            onChange={onPageChange}
+          />
+        </div>
+      )}
     </>
   );
 };

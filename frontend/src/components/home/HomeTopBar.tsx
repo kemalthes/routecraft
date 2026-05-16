@@ -44,9 +44,11 @@ export const HomeTopBar = ({
     </div>
     <div className="header-actions">
       <Space wrap size={8}>
-        <Button icon={<RobotOutlined />} onClick={onOpenAiSearch}>
-          ИИ-поиск
-        </Button>
+        {isAdmin && (
+          <Button icon={<RobotOutlined />} onClick={onOpenAiSearch}>
+            ИИ-поиск
+          </Button>
+        )}
         <Button type="primary" icon={<PlusOutlined />} onClick={onCreate}>
           Создать
         </Button>

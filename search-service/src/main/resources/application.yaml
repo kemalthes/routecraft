@@ -1,3 +1,36 @@
+server:
+  port: 8082
+
 spring:
   application:
     name: search-service
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+  ai:
+    model:
+      embedding: openai
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      base-url: ${OPENAI_BASE_URL}
+      embedding:
+        options:
+          model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+          dimensions: ${OPENAI_EMBEDDING_DIMENSIONS:1536}
+    vectorstore:
+      qdrant:
+        host: ${QDRANT_HOST:localhost}
+        port: ${QDRANT_GRPC_PORT:6334}
+        api-key: ${QDRANT_API_KEY:}
+        collection-name: ${QDRANT_COLLECTION:routes}
+        initialize-schema: true
+        use-tls: ${QDRANT_USE_TLS:false}
+
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  access-key: ${MINIO_USERNAME:minio}
+  secret-key: ${MINIO_PASSWORD:minioadmin}
+  bucket: ${MINIO_BUCKET:routes}
+  presigned-url-ttl: ${MINIO_PRESIGNED_URL_TTL:10}

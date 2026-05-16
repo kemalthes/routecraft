@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: RouteCraft Search Service API
-  description: Сервис семантического векторного поиска маршрутов (интеграция со Spring AI и Qdrant)
+  description: Semantic route search API backed by OpenAI embeddings and Qdrant.
   version: 1.0.0
 
 servers:
@@ -10,33 +10,34 @@ servers:
 
 tags:
   - name: search
-    description: Эндпоинты для полнотекстового и семантического поиска
+    description: Semantic search endpoints.
 
 paths:
   /search:
     get:
       tags: [search]
-      summary: Поиск маршрутов по смысловому запросу
-      description: Использует Spring AI для векторизации запроса и поиска ближайших соседей в Qdrant.
+      summary: Search published routes by semantic query.
+      description: Creates an embedding for the query and searches indexed published routes in Qdrant. Available only for admins.
       operationId: searchRoutes
       parameters:
         - name: q
           in: query
-          description: Текстовый запрос пользователя
+          description: Search query.
           required: true
           schema:
             type: string
             minLength: 2
         - name: limit
           in: query
-          description: Количество результатов
+          description: Number of results.
           schema:
             type: integer
-            default: 3
-            maximum: 10
+            default: 12
+            minimum: 1
+            maximum: 20
       responses:
         '200':
-          description: Список найденных маршрутов
+          description: Found route cards.
           content:
             application/json:
               schema:
@@ -45,78 +46,72 @@ paths:
                   $ref: '#/components/schemas/SearchRouteResponse'
         '400':
           $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
         '503':
-          $ref: '#/components/responses/SearchServiceUnavailableError'
+          $ref: '#/components/responses/Error'
 
 components:
   responses:
     BadRequestError:
-      description: Неверные параметры запроса
+      description: Invalid request parameters.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/SearchErrorResponse'
-    SearchServiceUnavailableError:
-      description: Search service is temporarily unavailable
-      headers:
-        Retry-After:
-          description: Seconds before retrying the request
-          schema:
-            type: integer
-            example: 10
+    Error:
+      description: Error response.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/GatewayErrorResponse'
+            $ref: '#/components/schemas/SearchErrorResponse'
 
   schemas:
     SearchRouteResponse:
       type: object
-      description: Денормализованная карточка маршрута из Qdrant Payload
+      description: Route preview card returned from the vector index.
       properties:
-        routeId:
+        id:
+          type: string
+          format: uuid
+        version:
           type: integer
           format: int64
-          example: 125
         title:
           type: string
-          example: "Тропа по горам Кавказа"
         description:
           type: string
-          example: "Увлекательный маршрут для любителей активного отдыха..."
         imageUrl:
           type: string
-          example: "/api/files/preview/mountains.jpg"
+        distance:
+          type: number
+          format: double
+          minimum: 0
+        durationMinutes:
+          type: integer
+          minimum: 0
+        authorName:
+          type: string
+        status:
+          type: string
+          enum: [PUBLISHED]
+        is_liked:
+          type: boolean
+          default: false
         score:
           type: number
           format: float
-          description: Релевантность поиска (cosine similarity)
-          example: 0.985
 
     SearchErrorResponse:
       type: object
       properties:
-        timestamp:
-          type: string
-          format: date-time
-        message:
-          type: string
-          example: "Поисковый запрос слишком короткий"
-        details:
-          type: string
-
-    GatewayErrorResponse:
-      type: object
-      properties:
         status:
           type: integer
-          example: 503
         error:
           type: string
-          example: "Service Unavailable"
         message:
           type: string
-          example: "Search service is temporarily unavailable. Please try again later."
         path:
           type: string
-          example: "/fallback/search-error"

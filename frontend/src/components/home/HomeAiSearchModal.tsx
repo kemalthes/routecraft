@@ -3,6 +3,7 @@ import { Input, Modal } from "antd";
 interface HomeAiSearchModalProps {
   open: boolean;
   query: string;
+  loading?: boolean;
   onChangeQuery: (value: string) => void;
   onApply: () => void;
   onClose: () => void;
@@ -11,6 +12,7 @@ interface HomeAiSearchModalProps {
 export const HomeAiSearchModal = ({
   open,
   query,
+  loading,
   onChangeQuery,
   onApply,
   onClose,
@@ -18,8 +20,9 @@ export const HomeAiSearchModal = ({
   <Modal
     title="ИИ-поиск маршрутов"
     open={open}
-    okText="Применить"
+    okText="Найти"
     cancelText="Отмена"
+    confirmLoading={loading}
     onOk={onApply}
     onCancel={onClose}
   >

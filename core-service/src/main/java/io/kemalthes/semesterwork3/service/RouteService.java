@@ -51,6 +51,7 @@ public class RouteService {
     private final CurrentUserService currentUserService;
     private final MinioService minioService;
     private final FavoriteRepository favoriteRepository;
+    private final RouteSearchPublisher routeSearchPublisher;
 
     @Transactional
     public CreateRouteResponse createRoute(CreateRouteRequest request) {
@@ -217,6 +218,7 @@ public class RouteService {
         route.setDescription(request.getDescription() == null ? "" : request.getDescription());
         route.setStatus(RouteStatus.PUBLISHED);
         TourRoute updatedRoute = tourRouteRepository.save(route);
+        routeSearchPublisher.publishAfterCommit(updatedRoute);
         return updatedRoute.getId();
     }
 

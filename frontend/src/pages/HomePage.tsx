@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input, Layout, Tabs, message } from "antd";
 import { useRoutesStore } from "../store/routes-store";
@@ -7,6 +7,8 @@ import { HomeInfoSider } from "../components/home/HomeInfoSider";
 import { HomeRoutesSection } from "../components/home/HomeRoutesSection";
 import { HomeAiSearchModal } from "../components/home/HomeAiSearchModal";
 import { authApi } from "../api/auth-api";
+import { searchApi } from "../api/search-api";
+import type { PaginationMeta, RoutePreview } from "../types/routes";
 
 const { Content, Footer } = Layout;
 const DEFAULT_PAGE_SIZE = 12;
@@ -29,11 +31,24 @@ export const HomePage = () => {
   const [activeTab, setActiveTab] = useState("routes");
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [aiQuery, setAiQuery] = useState("");
+  const [aiRoutes, setAiRoutes] = useState<RoutePreview[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [messageApi, contextHolder] = message.useMessage();
 
   const role = localStorage.getItem("role");
   const isAuthenticated = Boolean(localStorage.getItem("accessToken"));
   const isAdmin = role === "ROLE_ADMIN" || role === "ADMIN";
+
+  const aiPagination: PaginationMeta = useMemo(
+    () => ({
+      totalItems: aiRoutes.length,
+      totalPages: aiRoutes.length === 0 ? 0 : 1,
+      currentPage: 1,
+      itemsPerPage: DEFAULT_PAGE_SIZE,
+    }),
+    [aiRoutes.length],
+  );
 
   useEffect(() => {
     void fetchRoutes({ page: 1, limit: DEFAULT_PAGE_SIZE });
@@ -42,6 +57,7 @@ export const HomePage = () => {
   const runSearch = async (query: string) => {
     const normalized = query.trim();
     setAppliedSearch(normalized);
+    setActiveTab("routes");
     await fetchRoutes({
       page: 1,
       limit: pagination.itemsPerPage || DEFAULT_PAGE_SIZE,
@@ -49,7 +65,36 @@ export const HomePage = () => {
     });
   };
 
+  const runAiSearch = async () => {
+    if (!isAdmin) {
+      messageApi.warning("ИИ-поиск доступен только администраторам.");
+      return;
+    }
+    const normalized = aiQuery.trim();
+    if (normalized.length < 2) {
+      messageApi.warning("Введите запрос минимум из 2 символов.");
+      return;
+    }
+    try {
+      setAiLoading(true);
+      setAiError(null);
+      const result = await searchApi.searchRoutes({ q: normalized, limit: DEFAULT_PAGE_SIZE });
+      setAiRoutes(result);
+      setActiveTab("ai");
+      setAiModalOpen(false);
+    } catch (error) {
+      const messageText = error instanceof Error ? error.message : "Не удалось выполнить ИИ-поиск.";
+      setAiError(messageText);
+      messageApi.error(messageText);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handlePageChange = async (page: number, pageSize: number) => {
+    if (activeTab === "ai") {
+      return;
+    }
     if (activeTab === "favorites") {
       await fetchFavorites({ page, limit: pageSize });
       return;
@@ -59,6 +104,15 @@ export const HomePage = () => {
   };
 
   const handleTabChange = async (key: string) => {
+    if (key === "ai") {
+      if (!isAdmin) {
+        messageApi.warning("ИИ-поиск доступен только администраторам.");
+        return;
+      }
+      setActiveTab(key);
+      return;
+    }
+
     if (key === "favorites") {
       if (!isAuthenticated) {
         messageApi.warning("Войдите, чтобы открыть избранное.");
@@ -100,9 +154,19 @@ export const HomePage = () => {
       localStorage.removeItem("role");
       messageApi.success("Вы вышли из аккаунта");
       setActiveTab("routes");
+      setAiRoutes([]);
       await fetchRoutes({ page: 1, limit: DEFAULT_PAGE_SIZE, search: appliedSearch || undefined });
     }
   };
+
+  const displayedRoutes = activeTab === "favorites" ? favorites : activeTab === "ai" ? aiRoutes : routes;
+  const displayedPagination = activeTab === "favorites"
+    ? favoritesPagination
+    : activeTab === "ai"
+      ? aiPagination
+      : pagination;
+  const displayedLoading = activeTab === "ai" ? aiLoading : routesLoading;
+  const displayedError = activeTab === "ai" ? aiError : errorMessage;
 
   return (
     <Layout className="app-layout">
@@ -139,17 +203,19 @@ export const HomePage = () => {
             items={[
               { key: "routes", label: "Маршруты" },
               { key: "favorites", label: "Избранное" },
+              ...(isAdmin ? [{ key: "ai", label: "ИИ-поиск" }] : []),
             ]}
           />
 
           <HomeRoutesSection
-            loading={routesLoading}
-            routes={activeTab === "favorites" ? favorites : routes}
-            errorMessage={errorMessage}
-            pagination={activeTab === "favorites" ? favoritesPagination : pagination}
+            loading={displayedLoading}
+            routes={displayedRoutes}
+            errorMessage={displayedError}
+            pagination={displayedPagination}
+            showPagination={activeTab !== "ai"}
             togglingFavoriteId={togglingFavoriteId}
             onOpenRoute={(id) => navigate(`/route/${id}`)}
-            onToggleFavorite={handleToggleFavorite}
+            onToggleFavorite={activeTab === "ai" ? undefined : handleToggleFavorite}
             onPageChange={(page, pageSize) => void handlePageChange(page, pageSize)}
           />
         </Content>
@@ -162,12 +228,9 @@ export const HomePage = () => {
       <HomeAiSearchModal
         open={aiModalOpen}
         query={aiQuery}
+        loading={aiLoading}
         onChangeQuery={setAiQuery}
-        onApply={() => {
-          setSearchInput(aiQuery);
-          void runSearch(aiQuery);
-          setAiModalOpen(false);
-        }}
+        onApply={() => void runAiSearch()}
         onClose={() => setAiModalOpen(false)}
       />
     </Layout>

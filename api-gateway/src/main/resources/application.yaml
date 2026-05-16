@@ -36,7 +36,7 @@ spring:
         - id: search-service
           uri: ${SEARCH_SERVICE_URL:http://localhost:8082}
           predicates:
-            - Path=/api/v1/search/**
+            - Path=/api/search,/api/search/**
           filters:
             - name: RequestRateLimiter
               args:
@@ -44,6 +44,7 @@ spring:
                 redis-rate-limiter.burstCapacity: 20
                 key-resolver: "#{@ipKeyResolver}"
             - AuthFilter
+            - RewritePath=/api/(?<segment>.*), /$\{segment}
             - name: CircuitBreaker
               args:
                 name: searchCircuitBreaker
