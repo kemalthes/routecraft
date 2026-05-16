@@ -1,0 +1,205 @@
+@baseUrl = http://localhost:8081/api
+@userId = db56ec2a-09d8-47cc-b7ae-ce1d9e1f6a3d
+@routeId = 5dd76ae1-ccb1-4e8f-b6ea-a1cd0376610d
+@reviewId = 5a4c506c-d6fb-43e9-9832-85f726ab53e2
+@email = stop1qq@gmail.com
+@password = Password1234
+@verificationCode = 123931
+@accessToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkYjU2ZWMyYS0wOWQ4LTQ3Y2MtYjdhZS1jZTFkOWUxZjZhM2QiLCJzaWQiOiJhZjI4Njk5Ni1lOGIzLTRiNDgtODRjYy1kODdlOTgxNjNhYmEiLCJyb2xlIjoiUk9MRV9VU0VSIiwidG9rZW5fdHlwZSI6ImFjY2VzcyIsImp0aSI6ImMyNDQwZWFhLTg2M2EtNGU5ZS05OTc2LWI1N2Y3ZDRmNzc0MyIsImlhdCI6MTc3ODk2NDU5NSwiZXhwIjoxNzc4OTY1NDk1fQ.C4RBBoj3T9-yXOeZmmvmbKOGv9sXUx2kQrqFHSA2qEE
+@refreshToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkYjU2ZWMyYS0wOWQ4LTQ3Y2MtYjdhZS1jZTFkOWUxZjZhM2QiLCJzaWQiOiJhZjI4Njk5Ni1lOGIzLTRiNDgtODRjYy1kODdlOTgxNjNhYmEiLCJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImp0aSI6ImViYmZmMjE4LWMxM2MtNDYyMi05NjNlLWNjMjFiMTkxOGZhMiIsImlhdCI6MTc3ODk2NDU5NSwiZXhwIjoxNzgxNTU2NTk1fQ.Ej77AWVoXAfN2QxxiginaxWoTeo-CaBd89WNey0zsFI
+
+### Auth: check email
+GET {{baseUrl}}/auth/check-email-exists?email={{email}}
+Accept: application/json
+
+### Auth: send registration code
+POST {{baseUrl}}/auth/registration-code
+Content-Type: application/json
+
+{
+  "email": "{{email}}"
+}
+
+### Auth: register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+User-Agent: http-test-client
+
+{
+  "username": "test_user",
+  "email": "{{email}}",
+  "password": "{{password}}",
+  "code": "{{verificationCode}}"
+}
+
+### Auth: login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+User-Agent: http-test-client
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+
+### Auth: refresh tokens
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+User-Agent: http-test-client
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+
+### Auth: validate access token
+GET {{baseUrl}}/auth/validate
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+### Auth: change password
+POST {{baseUrl}}/auth/change-password
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "currentPassword": "{{password}}",
+  "newPassword": "Password1234"
+}
+
+### Auth: send password reset code
+POST {{baseUrl}}/auth/password-reset-code
+Content-Type: application/json
+
+{
+  "email": "{{email}}"
+}
+
+### Auth: reset password
+POST {{baseUrl}}/auth/reset-password
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "code": "{{verificationCode}}",
+  "newPassword": "{{password}}"
+}
+
+### Auth: logout
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{accessToken}}
+
+### Users: current user through gateway headers
+GET {{baseUrl}}/users/me
+X-User-Id: {{userId}}
+X-User-Role: ROLE_USER
+Accept: application/json
+
+### Routes: list published routes
+GET {{baseUrl}}/routes?page=1&limit=10
+Accept: application/json
+
+### Routes: search published routes
+GET {{baseUrl}}/routes?page=1&limit=10&search=park
+X-User-Id: {{userId}}
+X-User-Role: ROLE_USER
+Accept: application/json
+
+### Routes: get published route by id
+GET {{baseUrl}}/routes/{{routeId}}
+X-User-Id: {{userId}}
+X-User-Role: ROLE_USER
+Accept: application/json
+
+### Routes: create route
+POST {{baseUrl}}/routes
+X-User-Id: {{userId}}
+X-User-Role: ROLE_USER
+Content-Type: application/json
+
+{
+  "title": "Historic city walk",
+  "description": "Short walking route through central landmarks",
+  "imageUrl": "http://localhost:9000/routes/original.png",
+  "locations": [
+    {
+      "latitude": 55.751244,
+      "longitude": 37.618423,
+      "orderIndex": 0
+    },
+    {
+      "latitude": 55.752023,
+      "longitude": 37.617499,
+      "orderIndex": 1
+    }
+  ]
+}
+
+### Routes: my routes
+GET {{baseUrl}}/routes/my?page=1&limit=10
+X-User-Id: {{userId}}
+X-User-Role: ROLE_USER
+Accept: application/json
+
+### Routes: get my unpublished route
+GET {{baseUrl}}/routes/my/{{routeId}}
+X-User-Id: {{userId}}
+X-User-Role: ROLE_USER
+Accept: application/json
+
+### Routes: update my unpublished route
+PUT {{baseUrl}}/routes
+X-User-Id: {{userId}}
+X-User-Role: ROLE_USER
+Content-Type: application/json
+
+{
+  "uuid": "{{routeId}}",
+  "version": 0,
+  "title": "Updated city walk",
+  "description": "Updated route description"
+}
+
+### Routes: delete my unpublished route
+DELETE {{baseUrl}}/routes/{{routeId}}?version=0}
+X-User-Id: {{userId}}
+X-User-Role: ROLE_USER
+
+### Favorites: list
+GET {{baseUrl}}/favorites?page=1&limit=10
+X-User-Id: {{userId}}
+X-User-Role: ROLE_USER
+Accept: application/json
+
+### Favorites: add route
+POST {{baseUrl}}/favorites/{{routeId}}
+X-User-Id: {{userId}}
+X-User-Role: ROLE_USER
+
+### Favorites: remove route
+DELETE {{baseUrl}}/favorites/{{routeId}}
+X-User-Id: {{userId}}
+X-User-Role: ROLE_USER
+
+### Reviews: list by route
+GET {{baseUrl}}/routes/{{routeId}}/reviews?page=1&limit=10
+Accept: application/json
+
+### Reviews: create
+POST {{baseUrl}}/routes/{{routeId}}/reviews
+X-User-Id: {{userId}}
+X-User-Role: ROLE_USER
+Content-Type: application/json
+
+{
+  "rating": 5,
+  "comment": "Great route"
+}
+
+### Reviews: delete own review
+DELETE {{baseUrl}}/routes/{{routeId}}/reviews/{{reviewId}}
+X-User-Id: {{userId}}
+X-User-Role: ROLE_USER
+
+
