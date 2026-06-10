@@ -1,0 +1,179 @@
+name: Routecraft CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build
+        run: cd frontend && npm ci && npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-art
+          path: frontend/dist/
+          retention-days: 1
+
+  build-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+          cache: gradle
+
+      - name: Build
+        run: cd core-service && chmod +x ./gradlew && ./gradlew build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-art
+          path: core-service/build/libs/
+          retention-days: 1
+
+  build-search:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+          cache: gradle
+
+      - name: Build
+        run: cd search-service && chmod +x ./gradlew && ./gradlew build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: search-art
+          path: search-service/build/libs/
+          retention-days: 1
+
+  build-gateway:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+          cache: gradle
+
+      - name: Build
+        run: cd api-gateway && chmod +x ./gradlew && ./gradlew build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gateway-art
+          path: api-gateway/build/libs/
+          retention-days: 1
+  
+  deploy:
+    needs: [build-frontend, build-core, build-search, build-gateway]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: download frontend artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend
+          path: frontend/dist/
+
+      - name: download core-service artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: core-service
+          path: core-service/build/libs/
+
+      - name: download search-service artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: search-service
+          path: search-service/build/libs/
+
+      - name: download api-gateway artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: api-gateway
+          path: api-gateway/build/libs/
+
+      - name: login to dockerhub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: build and push frontend
+        uses: docker/build-push-action@v4
+        with:
+          context: frontend
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/routecraft-frontend:latest
+
+      - name: build and push core-service
+        uses: docker/build-push-action@v4
+        with:
+          context: core-service
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/routecraft-core-service:latest
+
+      - name: build and push search-service
+        uses: docker/build-push-action@v4
+        with:
+          context: search-service
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/routecraft-search-service:latest
+
+      - name: build and push api-gateway
+        uses: docker/build-push-action@v4
+        with:
+          context: api-gateway
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/routecraft-api-gateway:latest
+
+      - name: Copy docker-compose
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "docker-compose.prod.yml"
+          target: ${{ secrets.SSH_DEPLOY_PATH }}
+
+      - name: deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ${{ secrets.SSH_DEPLOY_PATH }}
+            cat << 'EOF' > .env
+            ${{ secrets.ENV }}
+            EOF
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-co mpose.prod.yml up -d --remove-orphans
+            docker image prune -f
