@@ -23,7 +23,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: frontend-art
+          name: frontend
           path: frontend/dist/
           retention-days: 1
 
@@ -43,7 +43,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: core-art
+          name: core
           path: core-service/build/libs/
           retention-days: 1
 
@@ -63,7 +63,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: search-art
+          name: search
           path: search-service/build/libs/
           retention-days: 1
 
@@ -83,10 +83,10 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: gateway-art
+          name: gateway
           path: api-gateway/build/libs/
           retention-days: 1
-  
+
   deploy:
     needs: [build-frontend, build-core, build-search, build-gateway]
     runs-on: ubuntu-latest
